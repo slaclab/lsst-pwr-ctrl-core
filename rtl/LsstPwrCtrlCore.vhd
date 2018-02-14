@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-02-13
+-- Last update: 2018-02-14
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -27,8 +27,11 @@ use unisim.vcomponents.all;
 
 entity LsstPwrCtrlCore is
    generic (
-      TPD_G        : time := 1 ns;
-      BUILD_INFO_G : BuildInfoType);
+      TPD_G                 : time             := 1 ns;
+      OVERRIDE_ETH_CONFIG_G : boolean          := false;
+      OVERRIDE_MAC_ADDR_G   : slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
+      OVERRIDE_IP_ADDR_G    : slv(31 downto 0) := x"0A_01_A8_C0";  -- 192.168.1.10
+      BUILD_INFO_G          : BuildInfoType);
    port (
       -- Register Interface
       axilClk          : out sl;
@@ -110,8 +113,11 @@ begin
    -------------------
    U_Eth : entity work.LsstPwrCtrlEth
       generic map (
-         TPD_G          => TPD_G,
-         SYS_CLK_FREQ_G => SYS_CLK_FREQ_C)
+         TPD_G                 => TPD_G,
+         OVERRIDE_ETH_CONFIG_G => OVERRIDE_ETH_CONFIG_G,
+         OVERRIDE_MAC_ADDR_G   => OVERRIDE_MAC_ADDR_G,
+         OVERRIDE_IP_ADDR_G    => OVERRIDE_IP_ADDR_G,
+         SYS_CLK_FREQ_G        => SYS_CLK_FREQ_C)
       port map (
          -- Register Interface
          axilClk         => clk,
