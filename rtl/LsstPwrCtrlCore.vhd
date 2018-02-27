@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-02-14
+-- Last update: 2018-02-27
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -54,6 +54,8 @@ entity LsstPwrCtrlCore is
       bootCsL          : out sl;
       bootMosi         : out sl;
       bootMiso         : in  sl;
+      bootWpL          : out sl;
+      bootHdL          : out sl;
       -- 1GbE Ports
       ethClkP          : in  sl;
       ethClkN          : in  sl;
@@ -226,6 +228,9 @@ begin
          -- Clocks and Resets
          axiClk         => clk,
          axiRst         => rst);
+
+   bootWpL <= '1';
+   bootHdL <= '1';
 
    -----------------------------------------------------
    -- Using the STARTUPE2 to access the FPGA's CCLK port
