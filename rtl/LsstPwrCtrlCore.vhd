@@ -213,7 +213,7 @@ begin
          TPD_G           => TPD_G,
          MEM_ADDR_MASK_G => x"00000000",
          AXI_CLK_FREQ_G  => SYS_CLK_FREQ_C,
-         SPI_CLK_FREQ_G  => (SYS_CLK_FREQ_C/5.0))
+         SPI_CLK_FREQ_G  => (SYS_CLK_FREQ_C/8.0))
       port map (
          -- FLASH Memory Ports
          csL            => bootCsL,

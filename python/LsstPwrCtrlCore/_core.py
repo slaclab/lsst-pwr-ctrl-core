@@ -51,7 +51,8 @@ class Core(pr.Device):
         ))        
         
         self.add(micron.AxiMicronN25Q(
-            offset = (9*devStride),
-            expand = False,
+            offset   = (9*devStride),
+            addrMode =  False, # Assume 24-bit address support only
+            hidden   =  True,
         ))
         
