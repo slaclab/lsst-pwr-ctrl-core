@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-02-27
+-- Last update: 2018-03-28
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -21,17 +21,23 @@ use ieee.std_logic_1164.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
+use work.LsstPwrCtrlPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 entity LsstPwrCtrlCore is
    generic (
-      TPD_G                 : time             := 1 ns;
-      OVERRIDE_ETH_CONFIG_G : boolean          := false;
-      OVERRIDE_MAC_ADDR_G   : slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
-      OVERRIDE_IP_ADDR_G    : slv(31 downto 0) := x"0A_01_A8_C0";  -- 192.168.1.10
-      BUILD_INFO_G          : BuildInfoType);
+      TPD_G                 : time                  := 1 ns;
+      BUILD_INFO_G          : BuildInfoType;
+      NUM_LANE_G            : positive range 1 to 4 := 1;
+      APP_TYPE_G            : AppType               := APP_NULL_TYPE_C;  -- See LsstPwrCtrlPkg.vhd for definitions
+      ------------------------------------------------------------------------
+      -- Generics for overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses
+      ------------------------------------------------------------------------
+      OVERRIDE_ETH_CONFIG_G : boolean               := false;  -- false = uses LsstPwrCtrlEthConfig.vhd, true = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
+      OVERRIDE_MAC_ADDR_G   : slv(47 downto 0)      := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
+      OVERRIDE_IP_ADDR_G    : slv(31 downto 0)      := x"0A_01_A8_C0");  -- 192.168.1.10
    port (
       -- Register Interface
       axilClk          : out sl;
@@ -42,8 +48,8 @@ entity LsstPwrCtrlCore is
       axilWriteSlaves  : in  AxiLiteWriteSlaveArray(6 downto 0);
       -- Misc. Signals
       extRstL          : in  sl;
-      ethLinkUp        : out sl;
-      rssiLinkUp       : out sl;
+      ethLinkUp        : out slv(NUM_LANE_G-1 downto 0);
+      rssiLinkUp       : out slv(NUM_LANE_G-1 downto 0);
       heartBeat        : out sl;
       efuse            : out slv(31 downto 0);
       dnaValue         : out slv(127 downto 0);
@@ -59,10 +65,10 @@ entity LsstPwrCtrlCore is
       -- 1GbE Ports
       ethClkP          : in  sl;
       ethClkN          : in  sl;
-      ethRxP           : in  sl;
-      ethRxN           : in  sl;
-      ethTxP           : out sl;
-      ethTxN           : out sl);
+      ethRxP           : in  slv(NUM_LANE_G-1 downto 0);
+      ethRxN           : in  slv(NUM_LANE_G-1 downto 0);
+      ethTxP           : out slv(NUM_LANE_G-1 downto 0);
+      ethTxN           : out slv(NUM_LANE_G-1 downto 0));
 end LsstPwrCtrlCore;
 
 architecture mapping of LsstPwrCtrlCore is
@@ -82,16 +88,23 @@ architecture mapping of LsstPwrCtrlCore is
    signal readMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal readSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
-   signal axilReadMaster  : AxiLiteReadMasterType;
-   signal axilReadSlave   : AxiLiteReadSlaveType;
-   signal axilWriteMaster : AxiLiteWriteMasterType;
-   signal axilWriteSlave  : AxiLiteWriteSlaveType;
+   signal coreWriteMasters : AxiLiteWriteMasterArray(NUM_LANE_G-1 downto 0);
+   signal coreWriteSlaves  : AxiLiteWriteSlaveArray(NUM_LANE_G-1 downto 0);
+   signal coreReadMasters  : AxiLiteReadMasterArray(NUM_LANE_G-1 downto 0);
+   signal coreReadSlaves   : AxiLiteReadSlaveArray(NUM_LANE_G-1 downto 0);
 
    signal clk     : sl;
    signal rst     : sl;
    signal bootSck : sl;
 
+   signal userValues : Slv32Array(0 to 63);
+
 begin
+
+   userValues(0)       <= LSST_PWR_CORE_VERSION_C;
+   userValues(1)       <= APP_TYPE_G;
+   userValues(2)       <= toSlv(NUM_LANE_G, 32);
+   userValues(3 to 63) <= (others => x"00000000");
 
    axilClk <= clk;
    axilRst <= rst;
@@ -116,30 +129,31 @@ begin
    U_Eth : entity work.LsstPwrCtrlEth
       generic map (
          TPD_G                 => TPD_G,
+         NUM_LANE_G            => NUM_LANE_G,
          OVERRIDE_ETH_CONFIG_G => OVERRIDE_ETH_CONFIG_G,
          OVERRIDE_MAC_ADDR_G   => OVERRIDE_MAC_ADDR_G,
          OVERRIDE_IP_ADDR_G    => OVERRIDE_IP_ADDR_G,
          SYS_CLK_FREQ_G        => SYS_CLK_FREQ_C)
       port map (
          -- Register Interface
-         axilClk         => clk,
-         axilRst         => rst,
-         axilReadMaster  => axilReadMaster,
-         axilReadSlave   => axilReadSlave,
-         axilWriteMaster => axilWriteMaster,
-         axilWriteSlave  => axilWriteSlave,
-         -- Misc.
-         extRstL         => extRstL,
-         ethLinkUp       => ethLinkUp,
-         rssiLinkUp      => rssiLinkUp,
-         efuse           => efuse,
+         axilClk          => clk,
+         axilRst          => rst,
+         axilReadMasters  => coreReadMasters,
+         axilReadSlaves   => coreReadSlaves,
+         axilWriteMasters => coreWriteMasters,
+         axilWriteSlaves  => coreWriteSlaves,
+         -- Misc. Signals
+         extRstL          => extRstL,
+         ethLinkUp        => ethLinkUp,
+         rssiLinkUp       => rssiLinkUp,
+         efuse            => efuse,
          -- 1GbE Ports
-         ethClkP         => ethClkP,
-         ethClkN         => ethClkN,
-         ethRxP          => ethRxP,
-         ethRxN          => ethRxN,
-         ethTxP          => ethTxP,
-         ethTxN          => ethTxN);
+         ethClkP          => ethClkP,
+         ethClkN          => ethClkN,
+         ethRxP           => ethRxP,
+         ethRxN           => ethRxN,
+         ethTxP           => ethTxP,
+         ethTxN           => ethTxN);
 
    ---------------------------
    -- AXI-Lite Crossbar Module
@@ -147,20 +161,20 @@ begin
    U_Xbar : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_SLAVE_SLOTS_G  => NUM_LANE_G,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
          MASTERS_CONFIG_G   => AXI_XBAR_CONFIG_C)
       port map (
-         axiClk              => clk,
-         axiClkRst           => rst,
-         sAxiWriteMasters(0) => axilWriteMaster,
-         sAxiWriteSlaves(0)  => axilWriteSlave,
-         sAxiReadMasters(0)  => axilReadMaster,
-         sAxiReadSlaves(0)   => axilReadSlave,
-         mAxiWriteMasters    => writeMasters,
-         mAxiWriteSlaves     => writeSlaves,
-         mAxiReadMasters     => readMasters,
-         mAxiReadSlaves      => readSlaves);
+         axiClk           => clk,
+         axiClkRst        => rst,
+         sAxiWriteMasters => coreWriteMasters,
+         sAxiWriteSlaves  => coreWriteSlaves,
+         sAxiReadMasters  => coreReadMasters,
+         sAxiReadSlaves   => coreReadSlaves,
+         mAxiWriteMasters => writeMasters,
+         mAxiWriteSlaves  => writeSlaves,
+         mAxiReadMasters  => readMasters,
+         mAxiReadSlaves   => readSlaves);
 
    ---------------------------
    -- AXI-Lite: Version Module
@@ -184,6 +198,7 @@ begin
          axiReadSlave   => readSlaves(VERSION_INDEX_C),
          axiWriteMaster => writeMasters(VERSION_INDEX_C),
          axiWriteSlave  => writeSlaves(VERSION_INDEX_C),
+         userValues     => userValues,
          dnaValueOut    => dnaValue,
          axiClk         => clk,
          axiRst         => rst);
@@ -229,8 +244,8 @@ begin
          axiClk         => clk,
          axiRst         => rst);
 
-   bootWpL <= '1';
-   bootHdL <= '1';
+   bootCsL  <= '1';
+   bootMosi <= '1';
 
    -----------------------------------------------------
    -- Using the STARTUPE2 to access the FPGA's CCLK port
