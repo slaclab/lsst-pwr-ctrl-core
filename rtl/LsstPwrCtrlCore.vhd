@@ -244,8 +244,8 @@ begin
          axiClk         => clk,
          axiRst         => rst);
 
-   bootCsL  <= '1';
-   bootMosi <= '1';
+   bootWpL <= '1';
+   bootHdL <= '1';
 
    -----------------------------------------------------
    -- Using the STARTUPE2 to access the FPGA's CCLK port

@@ -29,7 +29,8 @@ package LsstPwrCtrlPkg is
    -- 02/27/2018 (0x01000100): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.0.1
    -- 02/28/2018 (0x01000200): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.0.2
    -- 02/28/2018 (0x01000300): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.0.3
-   constant LSST_PWR_CORE_VERSION_C : slv(31 downto 0) := x"01_00_03_00";
+   -- 03/28/2018 (0x01010000): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.1.0
+   constant LSST_PWR_CORE_VERSION_C : slv(31 downto 0) := x"01_01_00_00";
 
    -----------------------------------------------------------
    -- Application: Configurations, Constants and Records Types
