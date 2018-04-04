@@ -28,7 +28,8 @@ package LsstPwrCtrlPkg is
    -- 02/28/2018 (0x01000200): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.0.2
    -- 02/28/2018 (0x01000300): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.0.3
    -- 03/28/2018 (0x01010000): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.1.0
-   -- 04/03/2018 (0x01010000): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.1.1
-   constant LSST_PWR_CORE_VERSION_C : slv(31 downto 0) := x"01_01_01_00";
+   -- 04/03/2018 (0x01010100): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.1.1
+   -- 04/04/2018 (0x01020000): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.2.0
+   constant LSST_PWR_CORE_VERSION_C : slv(31 downto 0) := x"01_02_00_00";
 
 end package LsstPwrCtrlPkg;
