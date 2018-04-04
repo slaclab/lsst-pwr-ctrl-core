@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-03-28
+-- Last update: 2018-04-03
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -56,12 +56,6 @@ entity LsstPwrCtrlCore is
       -- XADC Ports
       vPIn             : in  sl;
       vNIn             : in  sl;
-      -- Boot Memory Ports
-      bootCsL          : out sl;
-      bootMosi         : out sl;
-      bootMiso         : in  sl;
-      bootWpL          : out sl;
-      bootHdL          : out sl;
       -- 1GbE Ports
       ethClkP          : in  sl;
       ethClkN          : in  sl;
@@ -75,11 +69,10 @@ architecture mapping of LsstPwrCtrlCore is
 
    constant SYS_CLK_FREQ_C : real := 125.0E+6;
 
-   constant NUM_AXI_MASTERS_C : natural := 10;
+   constant NUM_AXI_MASTERS_C : natural := 9;
 
-   constant VERSION_INDEX_C   : natural := 7;
-   constant XADC_INDEX_C      : natural := 8;
-   constant BOOT_PROM_INDEX_C : natural := 9;
+   constant VERSION_INDEX_C : natural := 7;
+   constant XADC_INDEX_C    : natural := 8;
 
    constant AXI_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, x"0000_0000", 22, 18);
 
@@ -93,9 +86,8 @@ architecture mapping of LsstPwrCtrlCore is
    signal coreReadMasters  : AxiLiteReadMasterArray(NUM_LANE_G-1 downto 0);
    signal coreReadSlaves   : AxiLiteReadSlaveArray(NUM_LANE_G-1 downto 0);
 
-   signal clk     : sl;
-   signal rst     : sl;
-   signal bootSck : sl;
+   signal clk : sl;
+   signal rst : sl;
 
    signal userValues : Slv32Array(0 to 63);
 
@@ -219,51 +211,5 @@ begin
          -- Clocks and Resets
          axiClk         => clk,
          axiRst         => rst);
-
-   ----------------------
-   -- AXI-Lite: Boot Prom
-   ----------------------
-   U_SpiProm : entity work.AxiMicronN25QCore
-      generic map (
-         TPD_G           => TPD_G,
-         MEM_ADDR_MASK_G => x"00000000",
-         AXI_CLK_FREQ_G  => SYS_CLK_FREQ_C,
-         SPI_CLK_FREQ_G  => (SYS_CLK_FREQ_C/8.0))
-      port map (
-         -- FLASH Memory Ports
-         csL            => bootCsL,
-         sck            => bootSck,
-         mosi           => bootMosi,
-         miso           => bootMiso,
-         -- AXI-Lite Register Interface
-         axiReadMaster  => readMasters(BOOT_PROM_INDEX_C),
-         axiReadSlave   => readSlaves(BOOT_PROM_INDEX_C),
-         axiWriteMaster => writeMasters(BOOT_PROM_INDEX_C),
-         axiWriteSlave  => writeSlaves(BOOT_PROM_INDEX_C),
-         -- Clocks and Resets
-         axiClk         => clk,
-         axiRst         => rst);
-
-   bootWpL <= '1';
-   bootHdL <= '1';
-
-   -----------------------------------------------------
-   -- Using the STARTUPE2 to access the FPGA's CCLK port
-   -----------------------------------------------------
-   U_STARTUPE2 : STARTUPE2
-      port map (
-         CFGCLK    => open,  -- 1-bit output: Configuration main clock output
-         CFGMCLK   => open,  -- 1-bit output: Configuration internal oscillator clock output
-         EOS       => open,  -- 1-bit output: Active high output signal indicating the End Of Startup.
-         PREQ      => open,  -- 1-bit output: PROGRAM request to fabric output
-         CLK       => '0',  -- 1-bit input: User start-up clock input
-         GSR       => '0',  -- 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
-         GTS       => '0',  -- 1-bit input: Global 3-state input (GTS cannot be used for the port name)
-         KEYCLEARB => '0',  -- 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
-         PACK      => '0',  -- 1-bit input: PROGRAM acknowledge input
-         USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
-         USRCCLKTS => '0',  -- 1-bit input: User CCLK 3-state enable input
-         USRDONEO  => '1',  -- 1-bit input: User DONE pin output control
-         USRDONETS => '1');  -- 1-bit input: User DONE 3-state enable output   
 
 end mapping;
