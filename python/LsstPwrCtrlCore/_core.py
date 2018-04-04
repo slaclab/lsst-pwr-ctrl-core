@@ -52,7 +52,7 @@ class Core(pr.Device):
         self.add(pr.RemoteVariable(   
             name         = 'LSST_PWR_CORE_VERSION_C',
             description  = 'See LsstPwrCtrlPkg.vhd for definitions',
-            offset       = (7*devStride) + 0x400,
+            offset       = (7*devStride) + 0x400, # 0x1C0400
             base         = pr.UInt,
             mode         = 'RO',
         )) 
@@ -60,7 +60,7 @@ class Core(pr.Device):
         self.add(pr.RemoteVariable(   
             name         = 'APP_TYPE_G',
             description  = 'See LsstPwrCtrlPkg.vhd for definitions',
-            offset       = (7*devStride) + 0x404,
+            offset       = (7*devStride) + 0x404, # 0x1C0404
             base         = pr.UInt,
             mode         = 'RO',
         )) 
@@ -68,7 +68,7 @@ class Core(pr.Device):
         self.add(pr.RemoteVariable(   
             name         = 'NUM_LANE_G',
             description  = 'Number of Ethernet lanes',
-            offset       = (7*devStride) + 0x408,
+            offset       = (7*devStride) + 0x408, # 0x1C0408
             base         = pr.UInt,
             mode         = 'RO',
         )) 
