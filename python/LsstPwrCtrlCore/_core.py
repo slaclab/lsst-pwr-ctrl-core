@@ -58,10 +58,11 @@ class Core(pr.Device):
         )) 
 
         self.add(pr.RemoteVariable(   
-            name         = 'APP_TYPE_G',
-            description  = 'See LsstPwrCtrlPkg.vhd for definitions',
+            name         = 'BOARD_ID',
+            description  = 'eFuse[7:0] value',
             offset       = (7*devStride) + 0x404, # 0x1C0404
             base         = pr.UInt,
+            bitSize      = 8,
             mode         = 'RO',
         )) 
 

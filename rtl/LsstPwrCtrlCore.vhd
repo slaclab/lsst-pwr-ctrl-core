@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-04-03
+-- Last update: 2018-04-04
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -31,7 +31,6 @@ entity LsstPwrCtrlCore is
       TPD_G                 : time                  := 1 ns;
       BUILD_INFO_G          : BuildInfoType;
       NUM_LANE_G            : positive range 1 to 4 := 1;
-      APP_TYPE_G            : AppType               := APP_NULL_TYPE_C;  -- See LsstPwrCtrlPkg.vhd for definitions
       ------------------------------------------------------------------------
       -- Generics for overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses
       ------------------------------------------------------------------------
@@ -86,20 +85,23 @@ architecture mapping of LsstPwrCtrlCore is
    signal coreReadMasters  : AxiLiteReadMasterArray(NUM_LANE_G-1 downto 0);
    signal coreReadSlaves   : AxiLiteReadSlaveArray(NUM_LANE_G-1 downto 0);
 
-   signal clk : sl;
-   signal rst : sl;
+   signal clk        : sl;
+   signal rst        : sl;
+   signal efuseValue : slv(31 downto 0);
 
    signal userValues : Slv32Array(0 to 63);
 
 begin
 
    userValues(0)       <= LSST_PWR_CORE_VERSION_C;
-   userValues(1)       <= APP_TYPE_G;
+   userValues(1)       <= efuseValue;
    userValues(2)       <= toSlv(NUM_LANE_G, 32);
-   userValues(3 to 63) <= (others => x"00000000");
+   userValues(3)       <= ite(OVERRIDE_ETH_CONFIG_G, toSlv(1, 32), toSlv(0, 32));
+   userValues(4 to 63) <= (others => x"00000000");
 
    axilClk <= clk;
    axilRst <= rst;
+   efuse   <= efuseValue;
 
    axilReadMasters(6 downto 0) <= readMasters(6 downto 0);
    readSlaves(6 downto 0)      <= axilReadSlaves(6 downto 0);
@@ -138,7 +140,7 @@ begin
          extRstL          => extRstL,
          ethLinkUp        => ethLinkUp,
          rssiLinkUp       => rssiLinkUp,
-         efuse            => efuse,
+         efuse            => efuseValue,
          -- 1GbE Ports
          ethClkP          => ethClkP,
          ethClkN          => ethClkN,
