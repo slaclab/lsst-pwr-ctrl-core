@@ -15,6 +15,8 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
@@ -37,14 +39,23 @@ package LsstPwrCtrlPkg is
    -- Application: Configurations, Constants and Records Types
    -----------------------------------------------------------
    subtype AppType is slv(31 downto 0);
+   
+   constant PDU_00_C : AppType := x"0000_0000"; -- 0x00000000 
+   constant PDU_01_C : AppType := x"1000_0000"; -- 0x10000000 
+   constant PDU_02_C : AppType := x"2000_0000"; -- 0x20000000 
+   constant PDU_03_C : AppType := x"3000_0000"; -- 0x30000000 
+   constant PDU_04_C : AppType := x"4000_0000"; -- 0x40000000 
+   constant PDU_05_C : AppType := x"5000_0000"; -- 0x50000000 
+   constant PDU_06_C : AppType := x"6000_0000"; -- 0x60000000 
+   constant PDU_07_C : AppType := x"7000_0000"; -- 0x70000000 
 
-   constant APP_NULL_TYPE_C : AppType := toSlv(0, AppType'length);  -- Zero = undefined application
+   constant APP_NULL_TYPE_C : AppType := toSlv(0, 32);  -- Zero = undefined application
 
-   constant APP_PROTOTYPE_REB_PWR_TYPE_C  : AppType := toSlv(10834, AppType'length);  -- LCA-10834: Prototype REB Power Board 
-   constant APP_PRODUCTION_REB_PWR_TYPE_C : AppType := toSlv(15092, AppType'length);  -- LCA-15092: REB Power Supply (Production Version)
-   constant APP_ION_PUMP_CTRL_TYPE_C      : AppType := toSlv(15111, AppType'length);  -- LCA-15111: Ion Pump Main Control Board
-   constant APP_24V_48V_PDU_DISTR_TYPE_C  : AppType := toSlv(15764, AppType'length);  -- LCA-15764: 24/48V DC PDU Power Distribution Board
-   constant APP_5V_PDU_DISTR_TYPE_C       : AppType := toSlv(15768, AppType'length);  -- LCA-15768: 5V DC PDU Power Distribution Board
-   constant APP_HEATER_CTRL_TYPE_C        : AppType := toSlv(15772, AppType'length);  -- LCA-15772: REB Heater Control Board
+   constant APP_PROTOTYPE_REB_PWR_TYPE_C  : AppType := toSlv(10834, 32);  -- LCA-10834: Prototype REB Power Board 
+   constant APP_PRODUCTION_REB_PWR_TYPE_C : AppType := toSlv(15092, 32);  -- LCA-15092: REB Power Supply (Production Version)
+   constant APP_ION_PUMP_CTRL_TYPE_C      : AppType := toSlv(15111, 32);  -- LCA-15111: Ion Pump Main Control Board
+   constant APP_24V_48V_PDU_DISTR_TYPE_C  : AppType := toSlv(15764, 32);  -- LCA-15764: 24/48V DC PDU Power Distribution Board
+   constant APP_5V_PDU_DISTR_TYPE_C       : AppType := toSlv(15768, 32);  -- LCA-15768: 5V DC PDU Power Distribution Board
+   constant APP_HEATER_CTRL_TYPE_C        : AppType := toSlv(15772, 32);  -- LCA-15772: REB Heater Control Board
 
 end package LsstPwrCtrlPkg;
