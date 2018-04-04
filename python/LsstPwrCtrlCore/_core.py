@@ -18,10 +18,9 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
-import pyrogue             as pr
-import surf.axi            as axi
-import surf.devices.micron as micron
-import surf.xilinx         as xilinx
+import pyrogue     as pr
+import surf.axi    as axi
+import surf.xilinx as xilinx
 
 class Core(pr.Device):                         
     def __init__( self,       
@@ -48,12 +47,6 @@ class Core(pr.Device):
         self.add(xilinx.Xadc(
             offset = (8*devStride),
             expand = False,
-        ))        
-        
-        self.add(micron.AxiMicronN25Q(
-            offset   = (9*devStride),
-            addrMode =  False, # Assume 24-bit address support only
-            hidden   =  True,
         ))
         
         self.add(pr.RemoteVariable(   
