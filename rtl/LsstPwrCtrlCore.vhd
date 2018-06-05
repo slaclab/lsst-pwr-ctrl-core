@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-04-04
+-- Last update: 2018-06-04
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -28,15 +28,16 @@ use unisim.vcomponents.all;
 
 entity LsstPwrCtrlCore is
    generic (
-      TPD_G                 : time                  := 1 ns;
+      TPD_G                 : time                                         := 1 ns;
       BUILD_INFO_G          : BuildInfoType;
-      NUM_LANE_G            : positive range 1 to 4 := 1;
+      NUM_LANE_G            : positive range 1 to 4                        := 1;
+      AXI_XBAR_CONFIG_G     : AxiLiteCrossbarMasterConfigArray(8 downto 0) := genAxiLiteConfig(9, x"0000_0000", 22, 18);
       ------------------------------------------------------------------------
       -- Generics for overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses
       ------------------------------------------------------------------------
-      OVERRIDE_ETH_CONFIG_G : boolean               := false;  -- false = uses LsstPwrCtrlEthConfig.vhd, true = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
-      OVERRIDE_MAC_ADDR_G   : slv(47 downto 0)      := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
-      OVERRIDE_IP_ADDR_G    : slv(31 downto 0)      := x"0A_01_A8_C0");  -- 192.168.1.10
+      OVERRIDE_ETH_CONFIG_G : boolean                                      := false;  -- false = uses LsstPwrCtrlEthConfig.vhd, true = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
+      OVERRIDE_MAC_ADDR_G   : slv(47 downto 0)                             := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
+      OVERRIDE_IP_ADDR_G    : slv(31 downto 0)                             := x"0A_01_A8_C0");  -- 192.168.1.10
    port (
       -- Register Interface
       axilClk          : out sl;
@@ -72,9 +73,7 @@ architecture mapping of LsstPwrCtrlCore is
 
    constant VERSION_INDEX_C : natural := 7;
    constant XADC_INDEX_C    : natural := 8;
-
-   constant AXI_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, x"0000_0000", 22, 18);
-
+   
    signal writeMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal writeSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal readMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -157,7 +156,7 @@ begin
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => NUM_LANE_G,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
-         MASTERS_CONFIG_G   => AXI_XBAR_CONFIG_C)
+         MASTERS_CONFIG_G   => AXI_XBAR_CONFIG_G)
       port map (
          axiClk           => clk,
          axiClkRst        => rst,
