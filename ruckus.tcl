@@ -1,8 +1,8 @@
 # Load RUCKUS environment and library
 source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
-# Check for version 2018.1 of Vivado
-if { [VersionCheck 2018.1 "mustBeExact"] < 0 } {
+# Check for version 2017.4 of Vivado (or later)
+if { [VersionCheck 2017.4 ] < 0 } {
    exit -1
 }
 
