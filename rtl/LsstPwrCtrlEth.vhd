@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlEth.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-03-28
+-- Last update: 2018-06-29
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core: Ethernet Wrapper
 -------------------------------------------------------------------------------
@@ -26,12 +26,9 @@ use work.EthMacPkg.all;
 
 entity LsstPwrCtrlEth is
    generic (
-      TPD_G                 : time                  := 1 ns;
-      NUM_LANE_G            : positive range 1 to 4 := 1;
-      OVERRIDE_ETH_CONFIG_G : boolean               := false;
-      OVERRIDE_MAC_ADDR_G   : slv(47 downto 0)      := x"00_00_16_56_00_08";
-      OVERRIDE_IP_ADDR_G    : slv(31 downto 0)      := x"0A_01_A8_C0";
-      SYS_CLK_FREQ_G        : real                  := 125.0E+6);
+      TPD_G          : time                  := 1 ns;
+      NUM_LANE_G     : positive range 1 to 4 := 1;
+      SYS_CLK_FREQ_G : real                  := 125.0E+6);
    port (
       -- Register Interface
       axilClk          : out sl;
@@ -45,6 +42,10 @@ entity LsstPwrCtrlEth is
       ethLinkUp        : out slv(NUM_LANE_G-1 downto 0);
       rssiLinkUp       : out slv(NUM_LANE_G-1 downto 0);
       efuse            : out slv(31 downto 0);
+      -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
+      overrideEthCofig : in  sl;
+      overrideMacAddr  : in  slv(47 downto 0);
+      overrideIpAddr   : in  slv(31 downto 0);
       -- 1GbE Ports
       ethClkP          : in  sl;
       ethClkN          : in  sl;
@@ -87,6 +88,9 @@ architecture mapping of LsstPwrCtrlEth is
    signal extRst     : sl;
    signal rssiStatus : Slv7Array(3 downto 0) := (others => (others => '0'));
 
+   signal efuseMac : slv(47 downto 0);
+   signal efuseIp  : slv(31 downto 0);
+
    signal ethMac : slv(47 downto 0);
    signal ethIp  : slv(31 downto 0);
 
@@ -100,29 +104,21 @@ begin
    -------------------------
    -- Ethernet Configuration
    -------------------------   
-   GEN_CONFIG : if (OVERRIDE_ETH_CONFIG_G = false) generate
+   U_Config : entity work.LsstPwrCtrlEthConfig
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         -- Clock and Reset
+         clk   => ethClk,
+         rst   => ethRst,
+         -- MAC and IP address
+         mac   => efuseMac,
+         ip    => efuseIp,
+         efuse => efuse);
 
-      U_Config : entity work.LsstPwrCtrlEthConfig
-         generic map (
-            TPD_G => TPD_G)
-         port map (
-            -- Clock and Reset
-            clk   => ethClk,
-            rst   => ethRst,
-            -- MAC and IP address
-            mac   => ethMac,
-            ip    => ethIp,
-            efuse => efuse);
-
-   end generate;
-
-   BYP_CONFIG : if (OVERRIDE_ETH_CONFIG_G = true) generate
-
-      ethMac <= OVERRIDE_MAC_ADDR_G;
-      ethIp  <= OVERRIDE_IP_ADDR_G;
-      efuse  <= (others => '0');
-
-   end generate;
+   -- Select either EFUSE or external IP/MAC addresses
+   ethMac <= efuseMac when(overrideEthCofig = '0') else overrideMacAddr;
+   ethIp  <= efuseIp  when(overrideEthCofig = '0') else overrideIpAddr;
 
    ------------------------
    -- GigE Core for ARTIX-7
