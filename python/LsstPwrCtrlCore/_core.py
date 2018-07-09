@@ -9,18 +9,19 @@
 # Description:
 # PyRogue Feb Module
 #-----------------------------------------------------------------------------
-# This file is part of the 'Development Board Examples'. It is subject to 
+# This file is part of the 'LSST Firmware'. It is subject to 
 # the license terms in the LICENSE.txt file found in the top-level directory 
 # of this distribution and at: 
 #    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the 'Development Board Examples', including this file, may be 
+# No part of the 'LSST Firmware', including this file, may be 
 # copied, modified, propagated, or distributed except according to the terms 
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
-import pyrogue     as pr
-import surf.axi    as axi
-import surf.xilinx as xilinx
+import pyrogue             as pr
+import surf.axi            as axi
+import surf.devices.micron as micron
+import surf.xilinx         as xilinx
 
 class Core(pr.Device):                         
     def __init__( self,       
@@ -48,6 +49,12 @@ class Core(pr.Device):
             offset = (8*devStride),
             expand = False,
         ))
+        
+        self.add(micron.AxiMicronN25Q(
+            offset   = (9*devStride),
+            addrMode =  False, # Assume 24-bit address support only
+            hidden   =  True,
+        ))        
         
         self.add(pr.RemoteVariable(   
             name         = 'LSST_PWR_CORE_VERSION_C',
