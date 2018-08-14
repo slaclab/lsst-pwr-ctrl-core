@@ -19,5 +19,6 @@ if { [info exists ::env(OVERRIDE_SUBMODULE_LOCKS)] != 1 || $::env(OVERRIDE_SUBMO
 
 # Load ruckus files
 loadSource      -dir "$::DIR_PATH/rtl"
+loadSource      -dir "$::DIR_PATH/rtl/i2c"
 loadConstraints -dir "$::DIR_PATH/xdc"
 
