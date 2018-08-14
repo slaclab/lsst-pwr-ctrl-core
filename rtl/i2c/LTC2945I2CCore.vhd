@@ -46,8 +46,6 @@ use work.StdRtlPkg.all;
 use work.I2cPkg.all;
 use work.LsstI2cPkg.all;
 
-library work;
-
 entity LTC2945I2CCore is
    generic (
       TPD_G           : time            := 1 ns;
@@ -63,13 +61,13 @@ entity LTC2945I2CCore is
       Clock           : in  sl;
       Reset           : in  sl;
       StartRead       : in  sl;
--- Serial interface
+      -- Serial interface
       i2ci            : in  i2c_in_type;
       i2co            : out i2c_out_type;
--- Fifo Interface for writes
+      -- Fifo Interface for writes
       WrStrb          : in  sl;
       DataIn          : in  slv(31 downto 0);
--- Dual Port memory for output
+      -- Dual Port memory for output
       RdMemAddr       : in  slv(4 downto 0);
       MemDout         : out slv(31 downto 0);
       -- I2C Fault

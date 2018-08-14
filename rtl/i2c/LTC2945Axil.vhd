@@ -31,7 +31,7 @@ use work.I2cPkg.all;
 
 entity LTC2945Axil is
    generic (
-      TPD_G           : time             := 1 ns);
+      TPD_G : time := 1 ns);
    port (
       -- AXI-Lite Interface
       axilClk         : in    sl;

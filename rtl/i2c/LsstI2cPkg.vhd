@@ -26,27 +26,27 @@ use work.StdRtlPkg.all;
 
 package LsstI2cPkg is
 
-   constant SYS_CLK_FREQ_C : real := 125.0E+6;
-   type Lsst5VDcPdu_i2c_in is array (19 downto 0) of i2c_in_type;
-   type Lsst5VDcPdu_i2c_out is array (19 downto 0) of i2c_out_type;
+--    constant SYS_CLK_FREQ_C : real := 125.0E+6;
+--    type Lsst5VDcPdu_i2c_in is array (19 downto 0) of i2c_in_type;
+--    type Lsst5VDcPdu_i2c_out is array (19 downto 0) of i2c_out_type;
 
-   type Lsst24VDcPdu_i2c_in is array (11 downto 0) of i2c_in_type;
-   type Lsst24VDcPdu_i2c_out is array (11 downto 0) of i2c_out_type;
+--    type Lsst24VDcPdu_i2c_in is array (11 downto 0) of i2c_in_type;
+--    type Lsst24VDcPdu_i2c_out is array (11 downto 0) of i2c_out_type;
 
-   type jjo_I2cRegMasterInType is record
-      i2cAddr     : slv(9 downto 0);
-      tenbit      : sl;
-      regAddr     : slv(31 downto 0);
-      regWrData   : slv(31 downto 0);
-      regOp       : sl;
-      regAddrSkip : sl;
-      regAddrSize : slv(1 downto 0);
-      regDataSize : slv(7 downto 0);
-      regReq      : sl;
-      busReq      : sl;
-      endianness  : sl;
-      repeatStart : sl;
-   end record;
+--    type jjo_I2cRegMasterInType is record
+--       i2cAddr     : slv(9 downto 0);
+--       tenbit      : sl;
+--       regAddr     : slv(31 downto 0);
+--       regWrData   : slv(31 downto 0);
+--       regOp       : sl;
+--       regAddrSkip : sl;
+--       regAddrSize : slv(1 downto 0);
+--       regDataSize : slv(7 downto 0);
+--       regReq      : sl;
+--       busReq      : sl;
+--       endianness  : sl;
+--       repeatStart : sl;
+--    end record;
 
    type I2cByteMasterOutType is record
       regAck      : sl;                 -- Last byte data is available
