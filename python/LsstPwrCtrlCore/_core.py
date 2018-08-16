@@ -19,39 +19,38 @@
 #-----------------------------------------------------------------------------
 
 import pyrogue             as pr
+import pyrogue.interfaces.simulation
+import pyrogue.protocols
 import surf.axi            as axi
 import surf.devices.micron as micron
 import surf.xilinx         as xilinx
 
-class Core(pr.Device):                         
+AXIL_STRIDE = 0x40000
+AXIL_OFFSETS = [x*AXIL_STRIDE for x in range(10)]
+
+class LsstPwrCtrlCore(pr.Device):                         
     def __init__( self,       
-        name        = "Core",
-        description = "Core Container ",
         expand      = False,
         offset      = 0x0,
         **kwargs):
         
         super().__init__(
-            name        = name, 
-            description = description, 
             expand      = expand, 
             offset      = 0x0, # This module assume offset 0x0
             **kwargs)      
 
-        devStride = 0x40000    
-            
         self.add(axi.AxiVersion(
-            offset = (7*devStride),
+            offset = AXIL_OFFSETS[7],
             expand = False,
         ))
         
         self.add(xilinx.Xadc(
-            offset = (8*devStride),
+            offset = AXIL_OFFSETS[8],
             expand = False,
         ))
         
         self.add(micron.AxiMicronN25Q(
-            offset   = (9*devStride),
+            offset   = AXIL_OFFSETS[9],
             addrMode =  False, # Assume 24-bit address support only
             hidden   =  True,
         ))        
@@ -59,7 +58,7 @@ class Core(pr.Device):
         self.add(pr.RemoteVariable(   
             name         = 'LSST_PWR_CORE_VERSION_C',
             description  = 'See LsstPwrCtrlPkg.vhd for definitions',
-            offset       = (7*devStride) + 0x400, # 0x1C0400
+            offset       = AXIL_OFFSETS[7] + 0x400, # 0x1C0400
             base         = pr.UInt,
             mode         = 'RO',
         )) 
@@ -67,7 +66,7 @@ class Core(pr.Device):
         self.add(pr.RemoteVariable(   
             name         = 'BOARD_ID',
             description  = 'eFuse[7:0] value',
-            offset       = (7*devStride) + 0x404, # 0x1C0404
+            offset       = AXIL_OFFSETS[7] + 0x404, # 0x1C0404
             base         = pr.UInt,
             bitSize      = 8,
             mode         = 'RO',
@@ -76,8 +75,40 @@ class Core(pr.Device):
         self.add(pr.RemoteVariable(   
             name         = 'NUM_LANE_G',
             description  = 'Number of Ethernet lanes',
-            offset       = (7*devStride) + 0x408, # 0x1C0408
+            offset       = AXIL_OFFSETS[7] + 0x408, # 0x1C0408
             base         = pr.UInt,
             mode         = 'RO',
         )) 
         
+
+class LsstPwrCtrlRoot(pr.Root):
+    def __init__(self,
+                 hwEmu = False,
+                 rssiEn = False,
+                 ip = '192.168.1.10',
+                 **kwargs):
+        super().__init__(**kwargs)
+
+        # Check if emulating the GUI interface
+        if (hwEmu):
+            # Create emulated hardware interface
+            print ("Running in Hardware Emulation Mode")
+            self.srp = pyrogue.interfaces.simulation.MemEmulate()
+            
+        else:        
+            # Create srp interface
+            self.srp = rogue.protocols.srp.SrpV3()
+            
+            # Check for RSSI
+            if (rssiEn):
+                # UDP + RSSI
+                udp = pyrogue.protocols.UdpRssiPack( host=ip, port=8192, size=1500 )
+                # Connect the SRPv3 to tDest = 0x0
+                pyrogue.streamConnectBiDir( srp, udp.application(dest=0x0) )
+            else:        
+                # UDP only
+                udp = rogue.protocols.udp.Client(  ip, 8192, 1500 )
+                # Connect the SRPv3 to UDP
+                pyrogue.streamConnectBiDir( self.srp, udp )
+
+
