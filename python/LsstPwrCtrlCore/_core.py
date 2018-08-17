@@ -18,6 +18,7 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
+import rogue
 import pyrogue             as pr
 import pyrogue.interfaces.simulation
 import pyrogue.protocols
