@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlEth.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-06-29
+-- Last update: 2018-08-17
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core: Ethernet Wrapper
 -------------------------------------------------------------------------------
