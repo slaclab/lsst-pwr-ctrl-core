@@ -121,7 +121,7 @@ architecture Behavioral of LambdaI2CCore is
       StartDel  : sl;
       DelAck    : sl;
       WrdCnt    : integer range 0 to 24;  -- Current Word
-      RegAddr   : integer range 0 to 49;  -- Address in LTC
+      RegAddr   : integer range 1 to 49;  -- Address in LTC
       DelCnt    : integer range 0 to 16384;
       StoreWrd  : sl;
       DpRamAddr : slv(4 downto 0);
@@ -137,7 +137,7 @@ architecture Behavioral of LambdaI2CCore is
       DelAck    => '0',
       StartDel  => '0',
       WrdCnt    => 0,
-      RegAddr   => 0,
+      RegAddr   => 1,
       DelCnt    => 0,
       StoreWrd  => '0',
       DpRamAddr => (others => '0'),

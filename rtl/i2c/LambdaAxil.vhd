@@ -41,8 +41,8 @@ entity LambdaAxil is
       axilWriteMaster : in    AxiLiteWriteMasterType;
       axilWriteSlave  : out   AxiLiteWriteSlaveType;
       -- I2C bus
-      i2ci            : inout i2c_in_type;
-      i2co            : inout i2c_out_type;
+      i2ci            : in i2c_in_type;
+      i2co            : out i2c_out_type;
       -- Start Conversion
       StartConv       : in    sl;
       -- I2C Fault
