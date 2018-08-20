@@ -85,6 +85,7 @@ class LsstPwrCtrlCore(pr.Device):
 class LsstPwrCtrlRoot(pr.Root):
     def __init__(self,
                  hwEmu = False,
+                 sim = False,
                  rssiEn = False,
                  ip = '192.168.1.10',
                  **kwargs):
@@ -95,21 +96,27 @@ class LsstPwrCtrlRoot(pr.Root):
             # Create emulated hardware interface
             print ("Running in Hardware Emulation Mode")
             self.srp = pyrogue.interfaces.simulation.MemEmulate()
+
             
         else:        
             # Create srp interface
             self.srp = rogue.protocols.srp.SrpV3()
-            
-            # Check for RSSI
-            if (rssiEn):
-                # UDP + RSSI
-                udp = pyrogue.protocols.UdpRssiPack( host=ip, port=8192, size=1500 )
-                # Connect the SRPv3 to tDest = 0x0
-                pyrogue.streamConnectBiDir( srp, udp.application(dest=0x0) )
-            else:        
-                # UDP only
-                udp = rogue.protocols.udp.Client(  ip, 8192, 1500 )
-                # Connect the SRPv3 to UDP
-                pyrogue.streamConnectBiDir( self.srp, udp )
+
+            if sim:
+                dest = pyrogue.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=0, ssi=True)
+                pyrogue.streamConnectBiDir(self.srp, dest)
+                
+            else:
+                # Check for RSSI
+                if (rssiEn):
+                    # UDP + RSSI
+                    udp = pyrogue.protocols.UdpRssiPack( host=ip, port=8192, size=1500 )
+                    # Connect the SRPv3 to tDest = 0x0
+                    pyrogue.streamConnectBiDir( srp, udp.application(dest=0x0) )
+                else:        
+                    # UDP only
+                    udp = rogue.protocols.udp.Client(  ip, 8192, 1500 )
+                    # Connect the SRPv3 to UDP
+                    pyrogue.streamConnectBiDir( self.srp, udp )
 
 
