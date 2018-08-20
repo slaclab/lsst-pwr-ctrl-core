@@ -102,7 +102,7 @@ begin
    axilRst <= ethRst;
    extRst  <= not(extRstL);
 
-   ETH_HW_GEN_0 : if (not SIMULATION_G) generate
+   ETH_GEN : if (not SIMULATION_G) generate
 
       -------------------------
       -- Ethernet Configuration
@@ -168,9 +168,8 @@ begin
 
    end generate;
 
-   GEN_LANE :
-   for i in 0 to NUM_LANE_G-1 generate
-      ETH_HW_GEN_1 : if (not SIMULATION_G) generate
+   GEN_LANE : for i in 0 to NUM_LANE_G-1 generate
+      ETH_GEN : if (not SIMULATION_G) generate
 
          ----------------------
          -- IPv4/ARP/UDP Engine
@@ -266,7 +265,7 @@ begin
 
       end generate;
 
-      SIMULATION : if (SIMULATION_G) generate
+      SIMULATION_GEN : if (SIMULATION_G) generate
          ethClk <= ethClkP;
 
 
@@ -297,7 +296,7 @@ begin
                mAxisRst    => ethRst,           -- [in]
                mAxisMaster => appObMasters(i),  -- [out]
                mAxisSlave  => appObSlaves(i));  -- [in]
-      end generate SIMULATION;
+      end generate SIMULATION_GEN;
 
       ---------------------------------------------------------------
       -- SLAC Register Protocol Version 3, AXI-Lite Interface
