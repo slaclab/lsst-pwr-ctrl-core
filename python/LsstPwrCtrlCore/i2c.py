@@ -188,7 +188,11 @@ class Ltc2945(pr.Device):
         addGroup('Power', 0x14, 'RO', convPower, 'Watts')
         addGroup('Current', 0x28, 'RO', convCurrent, 'Amps')
         addGroup('Vin', 0x3c, 'RO', convVoltage, 'Volts')
-        addGroup('ADin', 0x50, 'RO', convVoltage, 'Volts')        
+        addGroup('ADin', 0x50, 'RO', convVoltage, 'Volts')
+
+    def readBlocks(self, recurse=True, variable=None, checkEach=False):
+        self.ADCReadStart()
+        pr.Device.readBlocks(self, recurse, variable, checkEach)
             
 class LambdaSupply(pr.Device):
     def __init__(self, 
