@@ -1,4 +1,5 @@
 import pyrogue as pr
+import time
 
 class Ltc2945(pr.Device):
     def __init__(self, 
@@ -190,11 +191,19 @@ class Ltc2945(pr.Device):
         addGroup('Vin', 0x3c, 'RO', convVoltage, 'Volts')
         addGroup('ADin', 0x50, 'RO', convVoltage, 'Volts')
 
-    def readBlocks(self, recurse=True, variable=None, checkEach=False):
-        self.ADCReadStart()
-        pr.Device.readBlocks(self, recurse, variable, checkEach)
+#     def readBlocks(self, recurse=True, variable=None, checkEach=False):
+#         self.ADCReadStart()
+#         pr.Device.readBlocks(self, recurse, variable, checkEach)
 
-
+    def writeBlocks(self, force=False, recurse=True, variable=None, checkEach=False):
+        # Write as normal
+        Device.writeBlocks(self, force, recurse, variable, checkEach)
+        # Retire the write transactions
+        self.checkBlocks()
+        # Wait for .2 seconds for the values to take effect
+        time.sleep(.2)
+        # Now when verify runs, the values should read back correctly
+        
 class Ltc2945Raw(pr.Device):
     def __init__(self, 
                  description = "LTC2945 Voltage and Current Monitor",
