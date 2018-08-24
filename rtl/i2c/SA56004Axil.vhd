@@ -32,7 +32,6 @@ use work.I2cPkg.all;
 entity SA56004Axil is
    generic (
       TPD_G            : time             := 1 ns);
-      );
    port (
       -- AXI-Lite Interface
       axilClk         : in    sl;
