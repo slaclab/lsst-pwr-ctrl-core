@@ -49,14 +49,14 @@ architecture rtl of Ltc2945I2cMap is
    constant AXIL_ADDR_SIZE_C : integer := 8;
 
    constant DEVICE_CFG_C : I2cAxiLiteDevType := (
-      i2cAddr     => "0001010000",
+      i2cAddress  => "0001010000",
       i2cTenbit   => '0',
       dataSize    => 32,                -- ignored
       addrSize    => 8,
       endianness  => '1',
       repeatStart => '1');
 
-   constant ADD_MAP_G : I2cAxiLiteAddrMapArray := (
+   constant ADDR_MAP_C : I2cAxiLiteAddrMapArray(0 to 24) := (
       0 => (axilAddr => X"000000_00", regAddr => X"000000_00", dataSize => 1),  -- CONTROL
       1 => (axilAddr => X"000000_04", regAddr => X"000000_01", dataSize => 1),  -- ALERT
       2 => (axilAddr => X"000000_08", regAddr => X"000000_02", dataSize => 1),  -- STATUS
@@ -85,7 +85,7 @@ architecture rtl of Ltc2945I2cMap is
       21 => (axilAddr => X"000000_54", regAddr => X"000000_2A", dataSize => 2),  -- Max ADin
       22 => (axilAddr => X"000000_58", regAddr => X"000000_2C", dataSize => 2),  -- Min ADin
       23 => (axilAddr => X"000000_5C", regAddr => X"000000_2E", dataSize => 2),  -- Max ADin Thresh
-      23 => (axilAddr => X"000000_60", regAddr => X"000000_30", dataSize => 2)  -- Min ADin Thresh      
+      24 => (axilAddr => X"000000_60", regAddr => X"000000_30", dataSize => 2)  -- Min ADin Thresh      
       );
 
 begin
