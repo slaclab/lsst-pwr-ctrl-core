@@ -164,7 +164,8 @@ begin
          DataIn    => FifoDataIn,
          -- Dual Port memory for output
          RdMemAddr => axilReadMaster.araddr(6 downto 2),
-         MemDout   => LTCDataOut
+         MemDout   => LTCDataOut,
+         LambdaComFault => LambdaComFault
          );
 
 end;
