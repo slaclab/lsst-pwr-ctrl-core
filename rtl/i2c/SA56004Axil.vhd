@@ -31,22 +31,22 @@ use work.I2cPkg.all;
 
 entity SA56004Axil is
    generic (
-      TPD_G            : time             := 1 ns);
+      TPD_G : time := 1 ns);
    port (
       -- AXI-Lite Interface
-      axilClk         : in    sl;
-      axilRst         : in    sl;
-      axilReadMaster  : in    AxiLiteReadMasterType;
-      axilReadSlave   : out   AxiLiteReadSlaveType;
-      axilWriteMaster : in    AxiLiteWriteMasterType;
-      axilWriteSlave  : out   AxiLiteWriteSlaveType;
+      axilClk         : in  sl;
+      axilRst         : in  sl;
+      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteSlave  : out AxiLiteWriteSlaveType;
       -- I2C bus
-      i2ci            : inout i2c_in_type;
-      i2co            : inout i2c_out_type;
+      i2ci            : in  i2c_in_type;
+      i2co            : out i2c_out_type;
       -- Start Conversion
-      StartConv       : in    sl;
+      StartConv       : in  sl;
       -- I2C fault
-      SA56004ComFault : out   sl
+      SA56004ComFault : out sl
       );
 end entity SA56004Axil;
 
@@ -70,12 +70,12 @@ architecture Behavioral of SA56004Axil is
    signal r          : RegType := REG_INIT_C;
    signal rin        : RegType;
    signal FifoDataIn : slv(31 downto 0);
-   signal LTCDataOut : slv(31 downto 0);
+   signal dataOut    : slv(31 downto 0);
    signal Convert    : sl;
 
 begin
 
-   comb : process (LTCDataOut, axilReadMaster, axilRst, axilWriteMaster, r) is
+   comb : process (axilReadMaster, axilRst, axilWriteMaster, dataOut, r) is
       variable v          : RegType;
       variable axilStatus : AxiLiteStatusType;
    begin
@@ -110,7 +110,7 @@ begin
 
       if (r.RdDelay = '1') then
          -- Forward the read data from the RAM
-         v.axilReadSlave.rdata := LTCDataOut;
+         v.axilReadSlave.rdata := dataOut;
          -- Send AXI-Lite Response
          axiSlaveReadResponse(v.axilReadSlave, AXI_RESP_OK_C);
       end if;
@@ -162,7 +162,7 @@ begin
          DataIn          => FifoDataIn,
          -- Dual Port memory for output
          RdMemAddr       => axilReadMaster.araddr(6 downto 2),
-         MemDout         => SA56004DataOut,
+         MemDout         => dataOut,
          SA56004ComFault => SA56004ComFault
          );
 
