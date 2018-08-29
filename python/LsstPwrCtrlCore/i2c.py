@@ -187,9 +187,9 @@ class Ltc2945(pr.Device):
             addPair('Min'+name, offset+8, mode, conv, units)
 
         addGroup('Power', 0x14, 'RO', convPower, 'Watts')
-        addGroup('Current', 0x28, 'RO', convCurrent, 'Amps')
-        addGroup('Vin', 0x3c, 'RO', convVoltage, 'Volts')
-        addGroup('ADin', 0x50, 'RO', convVoltage, 'Volts')
+        addGroup('Current', 0x2C, 'RO', convCurrent, 'Amps')
+        addGroup('Vin', 0x44, 'RO', convVoltage, 'Volts')
+        addGroup('ADin', 0x58, 'RO', convVoltage, 'Volts')
 
 #     def readBlocks(self, recurse=True, variable=None, checkEach=False):
 #         self.ADCReadStart()
