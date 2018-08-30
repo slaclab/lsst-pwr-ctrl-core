@@ -197,11 +197,11 @@ class Ltc2945(pr.Device):
 
     def writeBlocks(self, force=False, recurse=True, variable=None, checkEach=False):
         # Write as normal
-        Device.writeBlocks(self, force, recurse, variable, checkEach)
+        pr.Device.writeBlocks(self, force, recurse, variable, checkEach)
         # Retire the write transactions
-        self.checkBlocks(recurse, variable, checkEach)
+        self.checkBlocks(recurse, variable)
         # Wait for .2 seconds for the values to take effect
-        time.sleep(.2)
+        time.sleep(1)
         # Now when verify runs, the values should read back correctly
         
             
@@ -211,7 +211,7 @@ class LambdaSupply(pr.Device):
                  VScale = 0,
                  IScale = 0,
                  **kwargs):
-        super().__init__(name=name, description=description, **kwargs)
+        super().__init__(description=description, **kwargs)
         
         self.add(pr.RemoteCommand(   
             name         = 'ADCReadStart',
