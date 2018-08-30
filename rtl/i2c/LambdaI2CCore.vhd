@@ -116,35 +116,35 @@ architecture Behavioral of LambdaI2CCore is
       );
 
    type RegType is record
-      timer     : natural range 0 to TIMEOUT_C;
-      RnW       : sl;
-      StartDel  : sl;
-      DelAck    : sl;
-      WrdCnt    : integer range 0 to 24;  -- Current Word
-      RegAddr   : integer range 1 to 49;  -- Address in LTC
-      DelCnt    : integer range 0 to 16384;
-      StoreWrd  : sl;
-      DpRamAddr : slv(4 downto 0);
-      byteShift : slv(31 downto 0);
-      byteCnt   : slv(1 downto 0);        -- Wrap every 4 bytes to store 32bit values
-      regIn     : I2cByteMasterInType;
-      state     : StateType;
+      timer         : natural range 0 to TIMEOUT_C;
+      RnW           : sl;
+      startReadLast : sl;
+      DelAck        : sl;
+      WrdCnt        : integer range 0 to 24;  -- Current Word
+      RegAddr       : integer range 1 to 49;  -- Address in LTC
+      DelCnt        : integer range 0 to 16384;
+      StoreWrd      : sl;
+      DpRamAddr     : slv(4 downto 0);
+      byteShift     : slv(31 downto 0);
+      byteCnt       : slv(1 downto 0);        -- Wrap every 4 bytes to store 32bit values
+      regIn         : I2cByteMasterInType;
+      state         : StateType;
    end record;
 
    constant REG_INIT_C : RegType := (
-      timer     => 0,
-      RnW       => '0',
-      DelAck    => '0',
-      StartDel  => '0',
-      WrdCnt    => 0,
-      RegAddr   => 1,
-      DelCnt    => 0,
-      StoreWrd  => '0',
-      DpRamAddr => (others => '0'),
-      byteShift => (others => '0'),
-      byteCnt   => "00",
-      regIn     => MY_I2C_BYTE_MASTER_IN_INIT_C,
-      state     => IDLE_S
+      timer         => 0,
+      RnW           => '0',
+      DelAck        => '0',
+      startReadLast => '0',
+      WrdCnt        => 0,
+      RegAddr       => 1,
+      DelCnt        => 0,
+      StoreWrd      => '0',
+      DpRamAddr     => (others => '0'),
+      byteShift     => (others => '0'),
+      byteCnt       => "00",
+      regIn         => MY_I2C_BYTE_MASTER_IN_INIT_C,
+      state         => IDLE_S
       );
 
    signal r         : RegType := REG_INIT_C;
@@ -178,6 +178,8 @@ begin
       v.DpRamAddr := conv_std_logic_vector(r.wrdCnt, 5);
       v.DelAck    := regOut.regAck;
 
+      v.startReadLast := StartRead;
+
       if (regout.regRdDav = '1') then
          v.byteShift(31 downto 0) := r.byteShift(23 downto 0) & regout.regRdData;
          if (r.byteCnt = "11") then
@@ -200,7 +202,7 @@ begin
             v.RnW     := '0';
 
             if regOut.regAck = '0' then
-               if (StartRead = '1') then
+               if (StartRead = '1') and r.startReadLast = '0' then
                   -- Send read transaction to I2cRegMaster
                   v.regIn.regReq                           := '1';
                   v.regIn.regOp                            := '0';
