@@ -177,16 +177,11 @@ architecture Behavioral of SA56004I2CCore is
 --
 
    type Bytes2Read_t is array (0 downto 0) of integer range 1 to 3;
-   constant Bytes2Read : Bytes2Read_t :=
-      (
-         1
-         );
+   constant Bytes2Read : Bytes2Read_t :=      (0 => 1);
 
    type Addr2Write_t is array (0 downto 0) of integer range 0 to 48;
-   constant Addr2Write : Addr2Write_t :=
-      (
-         0
-         );
+   constant Addr2Write : Addr2Write_t := (0 => 0);
+
 
 begin
 

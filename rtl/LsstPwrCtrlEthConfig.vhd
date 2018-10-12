@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlEthConfig.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-02-14
+-- Last update: 2018-08-17
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core: Ethernet Configurations
 -------------------------------------------------------------------------------

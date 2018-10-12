@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlEth.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-06-29
+-- Last update: 2018-08-20
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core: Ethernet Wrapper
 -------------------------------------------------------------------------------
@@ -27,6 +27,7 @@ use work.EthMacPkg.all;
 entity LsstPwrCtrlEth is
    generic (
       TPD_G          : time                  := 1 ns;
+      SIMULATION_G   : boolean               := false;
       NUM_LANE_G     : positive range 1 to 4 := 1;
       SYS_CLK_FREQ_G : real                  := 125.0E+6);
    port (
@@ -101,162 +102,201 @@ begin
    axilRst <= ethRst;
    extRst  <= not(extRstL);
 
-   -------------------------
-   -- Ethernet Configuration
-   -------------------------   
-   U_Config : entity work.LsstPwrCtrlEthConfig
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         -- Clock and Reset
-         clk   => ethClk,
-         rst   => ethRst,
-         -- MAC and IP address
-         mac   => efuseMac,
-         ip    => efuseIp,
-         efuse => efuse);
+   ETH_GEN : if (not SIMULATION_G) generate
 
-   -- Select either EFUSE or external IP/MAC addresses
-   ethMac <= efuseMac when(overrideEthCofig = '0') else overrideMacAddr;
-   ethIp  <= efuseIp  when(overrideEthCofig = '0') else overrideIpAddr;
-
-   ------------------------
-   -- GigE Core for ARTIX-7
-   ------------------------
-   U_PHY_MAC : entity work.GigEthGtp7Wrapper
-      generic map (
-         TPD_G              => TPD_G,
-         NUM_LANE_G         => NUM_LANE_G,
-         -- Clocking Configurations
-         USE_GTREFCLK_G     => false,
-         CLKIN_PERIOD_G     => 8.0,     -- 125MHz
-         DIVCLK_DIVIDE_G    => 1,       -- 125 MHz = (125 MHz/1)
-         CLKFBOUT_MULT_F_G  => 8.0,     -- 1 GHz = (8 x 125 MHz)
-         CLKOUT0_DIVIDE_F_G => 8.0,     -- 125 MHz = (1.0 GHz/8)
-         -- AXI Streaming Configurations
-         AXIS_CONFIG_G      => (others => EMAC_AXIS_CONFIG_C))
-      port map (
-         -- Local Configurations
-         localMac     => localMac,
-         -- Streaming DMA Interface
-         dmaClk       => dmaClk,
-         dmaRst       => dmaRst,
-         dmaIbMasters => obMacMasters,
-         dmaIbSlaves  => obMacSlaves,
-         dmaObMasters => ibMacMasters,
-         dmaObSlaves  => ibMacSlaves,
-         -- Misc. Signals
-         extRst       => extRst,
-         phyClk       => ethClk,
-         phyRst       => ethRst,
-         phyReady     => ethLinkUp,
-         -- MGT Ports
-         gtClkP       => ethClkP,
-         gtClkN       => ethClkN,
-         gtTxP        => ethTxP,
-         gtTxN        => ethTxN,
-         gtRxP        => ethRxP,
-         gtRxN        => ethRxN);
-
-
-   localMac <= (others => ethMac);
-   dmaClk   <= (others => ethClk);
-   dmaRst   <= (others => ethRst);
-
-   GEN_LANE :
-   for i in 0 to NUM_LANE_G-1 generate
-
-      ----------------------
-      -- IPv4/ARP/UDP Engine
-      ----------------------
-      U_UDP : entity work.UdpEngineWrapper
+      -------------------------
+      -- Ethernet Configuration
+      -------------------------   
+      U_Config : entity work.LsstPwrCtrlEthConfig
          generic map (
-            -- Simulation Generics
-            TPD_G          => TPD_G,
-            -- UDP Server Generics
-            SERVER_EN_G    => true,
-            SERVER_SIZE_G  => 1,
-            SERVER_PORTS_G => SERVER_PORTS_C,
-            -- UDP Client Generics
-            CLIENT_EN_G    => false,
-            -- General IPv4/ARP/DHCP Generics
-            DHCP_G         => DHCP_C,
-            CLK_FREQ_G     => SYS_CLK_FREQ_G,
-            COMM_TIMEOUT_G => 30)
+            TPD_G => TPD_G)
+         port map (
+            -- Clock and Reset
+            clk   => ethClk,
+            rst   => ethRst,
+            -- MAC and IP address
+            mac   => efuseMac,
+            ip    => efuseIp,
+            efuse => efuse);
+
+      -- Select either EFUSE or external IP/MAC addresses
+      ethMac <= efuseMac when(overrideEthCofig = '0') else overrideMacAddr;
+      ethIp  <= efuseIp  when(overrideEthCofig = '0') else overrideIpAddr;
+
+      ------------------------
+      -- GigE Core for ARTIX-7
+      ------------------------
+      U_PHY_MAC : entity work.GigEthGtp7Wrapper
+         generic map (
+            TPD_G              => TPD_G,
+            NUM_LANE_G         => NUM_LANE_G,
+            -- Clocking Configurations
+            USE_GTREFCLK_G     => false,
+            CLKIN_PERIOD_G     => 8.0,  -- 125MHz
+            DIVCLK_DIVIDE_G    => 1,    -- 125 MHz = (125 MHz/1)
+            CLKFBOUT_MULT_F_G  => 8.0,  -- 1 GHz = (8 x 125 MHz)
+            CLKOUT0_DIVIDE_F_G => 8.0,  -- 125 MHz = (1.0 GHz/8)
+            -- AXI Streaming Configurations
+            AXIS_CONFIG_G      => (others => EMAC_AXIS_CONFIG_C))
          port map (
             -- Local Configurations
-            localMac           => ethMac,
-            localIp            => ethIp,
-            -- Interface to Ethernet Media Access Controller (MAC)
-            obMacMaster        => obMacMasters(i),
-            obMacSlave         => obMacSlaves(i),
-            ibMacMaster        => ibMacMasters(i),
-            ibMacSlave         => ibMacSlaves(i),
-            -- Interface to UDP Server engine(s)
-            obServerMasters(0) => obServerMasters(i),
-            obServerSlaves(0)  => obServerSlaves(i),
-            ibServerMasters(0) => ibServerMasters(i),
-            ibServerSlaves(0)  => ibServerSlaves(i),
-            -- Clock and Reset
-            clk                => ethClk,
-            rst                => ethRst);
+            localMac     => localMac,
+            -- Streaming DMA Interface
+            dmaClk       => dmaClk,
+            dmaRst       => dmaRst,
+            dmaIbMasters => obMacMasters,
+            dmaIbSlaves  => obMacSlaves,
+            dmaObMasters => ibMacMasters,
+            dmaObSlaves  => ibMacSlaves,
+            -- Misc. Signals
+            extRst       => extRst,
+            phyClk       => ethClk,
+            phyRst       => ethRst,
+            phyReady     => ethLinkUp,
+            -- MGT Ports
+            gtClkP       => ethClkP,
+            gtClkN       => ethClkN,
+            gtTxP        => ethTxP,
+            gtTxN        => ethTxN,
+            gtRxP        => ethRxP,
+            gtRxN        => ethRxN);
 
-      GEN_RSSI : if (RSSI_C = true) generate
-         ---------------------------------------------------------------
-         -- Wrapper for RSSI + AXIS Packetizer
-         -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD
-         ---------------------------------------------------------------
-         U_RssiServer : entity work.RssiCoreWrapper
+
+      localMac <= (others => ethMac);
+      dmaClk   <= (others => ethClk);
+      dmaRst   <= (others => ethRst);
+
+   end generate;
+
+   GEN_LANE : for i in 0 to NUM_LANE_G-1 generate
+      ETH_GEN : if (not SIMULATION_G) generate
+
+         ----------------------
+         -- IPv4/ARP/UDP Engine
+         ----------------------
+         U_UDP : entity work.UdpEngineWrapper
+            generic map (
+               -- Simulation Generics
+               TPD_G          => TPD_G,
+               -- UDP Server Generics
+               SERVER_EN_G    => true,
+               SERVER_SIZE_G  => 1,
+               SERVER_PORTS_G => SERVER_PORTS_C,
+               -- UDP Client Generics
+               CLIENT_EN_G    => false,
+               -- General IPv4/ARP/DHCP Generics
+               DHCP_G         => DHCP_C,
+               CLK_FREQ_G     => SYS_CLK_FREQ_G,
+               COMM_TIMEOUT_G => 30)
+            port map (
+               -- Local Configurations
+               localMac           => ethMac,
+               localIp            => ethIp,
+               -- Interface to Ethernet Media Access Controller (MAC)
+               obMacMaster        => obMacMasters(i),
+               obMacSlave         => obMacSlaves(i),
+               ibMacMaster        => ibMacMasters(i),
+               ibMacSlave         => ibMacSlaves(i),
+               -- Interface to UDP Server engine(s)
+               obServerMasters(0) => obServerMasters(i),
+               obServerSlaves(0)  => obServerSlaves(i),
+               ibServerMasters(0) => ibServerMasters(i),
+               ibServerSlaves(0)  => ibServerSlaves(i),
+               -- Clock and Reset
+               clk                => ethClk,
+               rst                => ethRst);
+
+         GEN_RSSI : if (RSSI_C = true) generate
+            ---------------------------------------------------------------
+            -- Wrapper for RSSI + AXIS Packetizer
+            -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD
+            ---------------------------------------------------------------
+            U_RssiServer : entity work.RssiCoreWrapper
+               generic map (
+                  TPD_G               => TPD_G,
+                  APP_ILEAVE_EN_G     => APP_ILEAVE_EN_C,
+                  MAX_SEG_SIZE_G      => 1024,
+                  SEGMENT_ADDR_SIZE_G => 7,
+                  APP_STREAMS_G       => 1,
+                  APP_STREAM_ROUTES_G => (0 => "--------"),
+                  CLK_FREQUENCY_G     => SYS_CLK_FREQ_G,
+                  TIMEOUT_UNIT_G      => 1.0E-3,  -- In units of seconds
+                  SERVER_G            => true,
+                  RETRANSMIT_ENABLE_G => true,
+                  BYPASS_CHUNKER_G    => false,
+                  WINDOW_ADDR_SIZE_G  => 3,
+                  PIPE_STAGES_G       => 1,
+                  APP_AXIS_CONFIG_G   => AXIS_CONFIG_C,
+                  TSP_AXIS_CONFIG_G   => EMAC_AXIS_CONFIG_C,
+                  INIT_SEQ_N_G        => 16#80#)
+               port map (
+                  clk_i                => ethClk,
+                  rst_i                => ethRst,
+                  openRq_i             => '1',
+                  -- Transport Layer Interface
+                  sTspAxisMaster_i     => obServerMasters(i),
+                  sTspAxisSlave_o      => obServerSlaves(i),
+                  mTspAxisMaster_o     => ibServerMasters(i),
+                  mTspAxisSlave_i      => ibServerSlaves(i),
+                  -- Application Layer Interface
+                  sAppAxisMasters_i(0) => appIbMasters(i),
+                  sAppAxisSlaves_o(0)  => appIbSlaves(i),
+                  mAppAxisMasters_o(0) => appObMasters(i),
+                  mAppAxisSlaves_i(0)  => appObSlaves(i),
+                  -- Internal statuses
+                  statusReg_o          => rssiStatus(i));
+
+            rssiLinkUp(i) <= rssiStatus(i)(0);
+
+         end generate;
+
+         BYP_RSSI : if (RSSI_C = false) generate
+
+            ---------------------------
+            -- No UDP reliability Layer
+            ---------------------------
+            appObMasters(i)    <= obServerMasters(i);
+            obServerSlaves(i)  <= appObSlaves(i);
+            ibServerMasters(i) <= appIbMasters(i);
+            appIbSlaves(i)     <= ibServerSlaves(i);
+            rssiLinkUp(i)      <= '0';
+
+         end generate;
+
+      end generate;
+
+      SIMULATION_GEN : if (SIMULATION_G) generate
+         ethClk <= ethClkP;
+
+
+         U_PwrUpRst : entity work.PwrUpRst
+            generic map (
+               TPD_G         => TPD_G,
+               SIM_SPEEDUP_G => true)
+            port map (
+               clk    => ethClk,
+               rstOut => ethRst);
+
+         U_RogueStreamSimWrap_1 : entity work.RogueStreamSimWrap
             generic map (
                TPD_G               => TPD_G,
-               APP_ILEAVE_EN_G     => APP_ILEAVE_EN_C,
-               MAX_SEG_SIZE_G      => 1024,
-               SEGMENT_ADDR_SIZE_G => 7,
-               APP_STREAMS_G       => 1,
-               APP_STREAM_ROUTES_G => (0 => "--------"),
-               CLK_FREQUENCY_G     => SYS_CLK_FREQ_G,
-               TIMEOUT_UNIT_G      => 1.0E-3,  -- In units of seconds
-               SERVER_G            => true,
-               RETRANSMIT_ENABLE_G => true,
-               BYPASS_CHUNKER_G    => false,
-               WINDOW_ADDR_SIZE_G  => 3,
-               PIPE_STAGES_G       => 1,
-               APP_AXIS_CONFIG_G   => AXIS_CONFIG_C,
-               TSP_AXIS_CONFIG_G   => EMAC_AXIS_CONFIG_C,
-               INIT_SEQ_N_G        => 16#80#)
+               DEST_ID_G           => 0,
+               USER_ID_G           => i,
+               COMMON_MASTER_CLK_G => true,
+               COMMON_SLAVE_CLK_G  => true,
+               AXIS_CONFIG_G       => EMAC_AXIS_CONFIG_C)
             port map (
-               clk_i                => ethClk,
-               rst_i                => ethRst,
-               openRq_i             => '1',
-               -- Transport Layer Interface
-               sTspAxisMaster_i     => obServerMasters(i),
-               sTspAxisSlave_o      => obServerSlaves(i),
-               mTspAxisMaster_o     => ibServerMasters(i),
-               mTspAxisSlave_i      => ibServerSlaves(i),
-               -- Application Layer Interface
-               sAppAxisMasters_i(0) => appIbMasters(i),
-               sAppAxisSlaves_o(0)  => appIbSlaves(i),
-               mAppAxisMasters_o(0) => appObMasters(i),
-               mAppAxisSlaves_i(0)  => appObSlaves(i),
-               -- Internal statuses
-               statusReg_o          => rssiStatus(i));
-
-         rssiLinkUp(i) <= rssiStatus(i)(0);
-
-      end generate;
-
-      BYP_RSSI : if (RSSI_C = false) generate
-
-         ---------------------------
-         -- No UDP reliability Layer
-         ---------------------------
-         appObMasters(i)    <= obServerMasters(i);
-         obServerSlaves(i)  <= appObSlaves(i);
-         ibServerMasters(i) <= appIbMasters(i);
-         appIbSlaves(i)     <= ibServerSlaves(i);
-         rssiLinkUp(i)      <= '0';
-
-      end generate;
+               clk         => ethClk,           -- [in]
+               rst         => ethRst,           -- [in]
+               sAxisClk    => ethClk,           -- [in]
+               sAxisRst    => ethRst,           -- [in]
+               sAxisMaster => appIbMasters(i),  -- [in]
+               sAxisSlave  => appIbSlaves(i),   -- [out]
+               mAxisClk    => ethClk,           -- [in]
+               mAxisRst    => ethRst,           -- [in]
+               mAxisMaster => appObMasters(i),  -- [out]
+               mAxisSlave  => appObSlaves(i));  -- [in]
+      end generate SIMULATION_GEN;
 
       ---------------------------------------------------------------
       -- SLAC Register Protocol Version 3, AXI-Lite Interface
