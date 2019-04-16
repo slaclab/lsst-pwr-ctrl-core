@@ -2,7 +2,7 @@
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-05-01
--- Last update: 2018-06-29
+-- Last update: 2018-08-20
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -29,6 +29,7 @@ use unisim.vcomponents.all;
 entity LsstPwrCtrlCore is
    generic (
       TPD_G             : time                                         := 1 ns;
+      SIMULATION_G      : boolean                                      := false;
       BUILD_INFO_G      : BuildInfoType;
       NUM_LANE_G        : positive range 1 to 4                        := 1;
       AXI_XBAR_CONFIG_G : AxiLiteCrossbarMasterConfigArray(9 downto 0) := genAxiLiteConfig(10, x"0000_0000", 22, 18));
@@ -50,7 +51,7 @@ entity LsstPwrCtrlCore is
       -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
       overrideEthCofig : in  sl               := '0';  -- '0' = uses LsstPwrCtrlEthConfig.vhd, '1' = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
       overrideMacAddr  : in  slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
-      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";  -- 192.168.1.10      
+      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";        -- 192.168.1.10      
       -- XADC Ports
       vPIn             : in  sl;
       vNIn             : in  sl;
@@ -128,6 +129,7 @@ begin
    U_Eth : entity work.LsstPwrCtrlEth
       generic map (
          TPD_G          => TPD_G,
+         SIMULATION_G   => SIMULATION_G,
          NUM_LANE_G     => NUM_LANE_G,
          SYS_CLK_FREQ_G => SYS_CLK_FREQ_C)
       port map (
@@ -254,18 +256,18 @@ begin
    -----------------------------------------------------
    U_STARTUPE2 : STARTUPE2
       port map (
-         CFGCLK    => open,  -- 1-bit output: Configuration main clock output
+         CFGCLK    => open,             -- 1-bit output: Configuration main clock output
          CFGMCLK   => open,  -- 1-bit output: Configuration internal oscillator clock output
          EOS       => open,  -- 1-bit output: Active high output signal indicating the End Of Startup.
-         PREQ      => open,  -- 1-bit output: PROGRAM request to fabric output
-         CLK       => '0',  -- 1-bit input: User start-up clock input
+         PREQ      => open,             -- 1-bit output: PROGRAM request to fabric output
+         CLK       => '0',              -- 1-bit input: User start-up clock input
          GSR       => '0',  -- 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
          GTS       => '0',  -- 1-bit input: Global 3-state input (GTS cannot be used for the port name)
          KEYCLEARB => '0',  -- 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
-         PACK      => '0',  -- 1-bit input: PROGRAM acknowledge input
+         PACK      => '0',              -- 1-bit input: PROGRAM acknowledge input
          USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
-         USRCCLKTS => '0',  -- 1-bit input: User CCLK 3-state enable input
-         USRDONEO  => '1',  -- 1-bit input: User DONE pin output control
-         USRDONETS => '1');  -- 1-bit input: User DONE 3-state enable output   
+         USRCCLKTS => '0',              -- 1-bit input: User CCLK 3-state enable input
+         USRDONEO  => '1',              -- 1-bit input: User DONE pin output control
+         USRDONETS => '1');             -- 1-bit input: User DONE 3-state enable output   
 
 end mapping;
