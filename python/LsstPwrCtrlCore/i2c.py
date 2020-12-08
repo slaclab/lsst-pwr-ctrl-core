@@ -2,13 +2,13 @@ import pyrogue as pr
 import time
 
 class Ltc2945(pr.Device):
-    def __init__(self, 
+    def __init__(self,
                  description = "LTC2945 Voltage and Current Monitor",
                  shunt      = 0,
                  **kwargs):
         super().__init__(description=description, **kwargs)
 
-        self.add(pr.RemoteCommand(   
+        self.add(pr.RemoteCommand(
             name         = 'ADCReadStart',
             description  = '',
             offset       = 0x100,
@@ -16,7 +16,7 @@ class Ltc2945(pr.Device):
             bitOffset    = 0,
             base         = pr.UInt,
             function     = lambda cmd: cmd.post(1)
-        ))        
+        ))
 
         #######################
         # Control Register
@@ -28,7 +28,7 @@ class Ltc2945(pr.Device):
             bitOffset = 0,
             bitSize = 1,
             enum = {1: 'SENSE+/VDD', 0: 'ADIN'}))
-        
+
 
         self.add(pr.RemoteVariable(
             name = 'ShutdownEnable',
@@ -37,7 +37,7 @@ class Ltc2945(pr.Device):
             bitOffset = 1,
             bitSize = 1,
             enum = {0: 'Normal Operation', 1: 'Shutdown'}))
-        
+
         self.add(pr.RemoteVariable(
             name = 'VinMonitor',
             description = 'Enables VDD or SENSE+ voltage monitoring',
@@ -45,7 +45,7 @@ class Ltc2945(pr.Device):
             bitOffset = 2,
             bitSize = 1,
             enum = {1: 'SENSE+', 0: 'VDD'}))
-                 
+
         self.add(pr.RemoteVariable(
             name = 'AdcBusy',
             description = 'Adc Current Status',
@@ -53,7 +53,7 @@ class Ltc2945(pr.Device):
             offset = 0x0,
             bitOffset = 3,
             bitSize = 1))
-                 
+
         self.add(pr.RemoteVariable(
             name = 'TestMode',
             description = 'Test Mode Halts ADC Operations and Enables Writes to Interal ADC/LOGIC Registers',
@@ -61,7 +61,7 @@ class Ltc2945(pr.Device):
             bitOffset = 4,
             bitSize = 1,
             enum = {0: 'Disabled', 1: 'Enabled'}))
-                 
+
         self.add(pr.RemoteVariable(
             name = 'AdcChannelLabel',
             description = 'ADC Channel Label for Snapshot Mode',
@@ -69,7 +69,7 @@ class Ltc2945(pr.Device):
             bitOffset = 5,
             bitSize = 2,
             enum = {0: 'DeltaSense', 1: 'Vin', 2: 'ADIN'}))
-                 
+
         self.add(pr.RemoteVariable(
             name = 'AdcSnapshotMode',
             description = 'Enables ADC Snapshot Mode. Only channel selcted by AdcChannelLabel is measure by the ADC. After the conversion, the BUSY bit is reset and the ADC is halted.',
@@ -123,13 +123,13 @@ class Ltc2945(pr.Device):
         # Fault Register
         ###########################
         faults = ['PowerOvervalueFault',
-                    'PowerUndervalueFault',
-                    'SenseOvervalueFault',
-                    'SenseUndervalueFault',
-                    'VinOvervalueFault',
-                    'VinUndervalueFault',
-                    'ADinOvervalueFault',
-                    'ADinUndervalueFault']
+                  'PowerUndervalueFault',
+                  'SenseOvervalueFault',
+                  'SenseUndervalueFault',
+                  'VinOvervalueFault',
+                  'VinUndervalueFault',
+                  'ADinOvervalueFault',
+                  'ADinUndervalueFault']
         for i, name in enumerate(faults):
             self.add(pr.RemoteVariable(
                 name = name,
@@ -139,7 +139,7 @@ class Ltc2945(pr.Device):
                 bitSize = 1,
                 base = pr.Bool))
 
-        
+
         ##############################
         # Fault Clear
         #############################
@@ -170,9 +170,9 @@ class Ltc2945(pr.Device):
                 mode = mode,
                 offset = offset,
                 base = pr.UInt))
-            
+
             raw = self.nodes[name+'Raw']
-            
+
             self.add(pr.LinkVariable(
                 name = name,
                 mode = mode,
@@ -203,17 +203,17 @@ class Ltc2945(pr.Device):
         # Wait for .2 seconds for the values to take effect
         time.sleep(1)
         # Now when verify runs, the values should read back correctly
-        
-            
+
+
 class LambdaSupply(pr.Device):
-    def __init__(self, 
+    def __init__(self,
                  description = "Lambda Power Supply I2C",
                  VScale = 0,
                  IScale = 0,
                  **kwargs):
         super().__init__(description=description, **kwargs)
-        
-        self.add(pr.RemoteCommand(   
+
+        self.add(pr.RemoteCommand(
             name         = 'ADCReadStart',
             description  = '',
             offset       = 0x100,
@@ -221,10 +221,10 @@ class LambdaSupply(pr.Device):
             bitOffset    = 0,
             base         = pr.UInt,
             function     = lambda cmd: cmd.post(1)
-        )) 
-        
-        
-        self.add(pr.RemoteVariable(   
+        ))
+
+
+        self.add(pr.RemoteVariable(
             name         = 'SerialNumber',
             description  = 'Serial Number',
             offset       = 0x00,
@@ -235,7 +235,7 @@ class LambdaSupply(pr.Device):
         ))
 
 
-        self.add(pr.RemoteVariable(   
+        self.add(pr.RemoteVariable(
             name         = 'FirmWareVersion',
             description  = 'FirmWare Version',
             offset       = 0x14,
@@ -246,7 +246,7 @@ class LambdaSupply(pr.Device):
         ))
 
 
-        self.add(pr.RemoteVariable(   
+        self.add(pr.RemoteVariable(
             name         = 'ProductVersion',
             description  = 'Product Version',
             offset       = 0x18,
@@ -284,7 +284,7 @@ class LambdaSupply(pr.Device):
             variable = self.OutputI,
             linkedGet = lambda raw = self.OutputI: (raw.value() * IScale),
             disp = '{:1.3f}',
-        ))     
+        ))
 
         self.add(pr.RemoteVariable(
             name    = 'PlateTemp',
@@ -299,7 +299,7 @@ class LambdaSupply(pr.Device):
             variable = self.PlateTemp,
             linkedGet = lambda raw = self.PlateTemp: ((raw.value()-610)/2.048 + 25),
             disp = '{:1.3f}',
-        ))     
+        ))
 
         self.add(pr.RemoteVariable(
             name    = 'Status',
@@ -308,7 +308,7 @@ class LambdaSupply(pr.Device):
         ))
 
 
-        self.add(pr.RemoteVariable(   
+        self.add(pr.RemoteVariable(
             name         = 'PartNumber',
             description  = 'Part Number',
             offset       = 0x2C,
@@ -319,7 +319,7 @@ class LambdaSupply(pr.Device):
         ))
 
 
-        self.add(pr.RemoteVariable(   
+        self.add(pr.RemoteVariable(
             name         = 'ManufDate',
             description  = 'Manuf Date',
             offset       = 0x38,
@@ -329,7 +329,7 @@ class LambdaSupply(pr.Device):
             mode         = 'RO',
         ))
 
-        self.add(pr.RemoteVariable(   
+        self.add(pr.RemoteVariable(
             name         = 'ManufLoc',
             description  = 'Manuf Loc',
             offset       = 0x40,
@@ -338,4 +338,3 @@ class LambdaSupply(pr.Device):
             base         = pr.String,
             mode         = 'RO',
         ))
-
