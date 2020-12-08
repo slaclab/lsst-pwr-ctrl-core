@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# This file is part of the 'LSST Firmware'. It is subject to 
-# the license terms in the LICENSE.txt file found in the top-level directory 
-# of this distribution and at: 
-#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the 'LSST Firmware', including this file, may be 
-# copied, modified, propagated, or distributed except according to the terms 
+# This file is part of the 'LSST Firmware'. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the 'LSST Firmware', including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
@@ -16,31 +16,30 @@ import LsstPwrCtrlCore as board
 
 import argparse
 import time
-import sys
 
 # Set the argument parser
 parser = argparse.ArgumentParser()
 
 # Add arguments
 parser.add_argument(
-    "--mcs", 
+    "--mcs",
     type     = str,
     required = True,
     help     = "path to mcs file",
 )
 
 parser.add_argument(
-    "--ip", 
+    "--ip",
     type     = str,
     required = True,
     help     = "IP address",
-)  
+)
 
 # Get the arguments
 args = parser.parse_args()
 
 # Set base
-base = pr.Root(name='base',description='')    
+base = pr.Root(name='base',description='')
 
 # Create srp interface
 srp = rogue.protocols.srp.SrpV3()
@@ -49,12 +48,12 @@ srp = rogue.protocols.srp.SrpV3()
 udp = rogue.protocols.udp.Client( args.ip, 8192, 1500 )
 
 # Connect the SRPv3 to UDP
-pr.streamConnectBiDir( srp, udp )            
+pr.streamConnectBiDir( srp, udp )
 
 # Add Base Device
 base.add(board.Core(
     memBase = srp,
-    offset  = 0x00000000, 
+    offset  = 0x00000000,
 ))
 
 # Start the system
@@ -92,4 +91,4 @@ else:
     print('Failed to program FPGA')
 
 base.stop()
-exit() 
+exit()
