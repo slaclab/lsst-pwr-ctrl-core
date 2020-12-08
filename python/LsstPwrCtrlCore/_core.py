@@ -30,10 +30,10 @@ AXIL_STRIDE = 0x40000
 AXIL_OFFSETS = [x*AXIL_STRIDE for x in range(10)]
 
 class LsstPwrCtrlCore(pr.Device):
-    def __init__( self,
-        expand      = False,
-        offset      = 0x0,
-        **kwargs):
+    def __init__(self,
+                 expand      = False,
+                 offset      = 0x0,
+                 **kwargs):
 
         super().__init__(
             expand      = expand,
