@@ -1,8 +1,6 @@
 -------------------------------------------------------------------------------
 -- File       : LsstPwrCtrlEth.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-05-01
--- Last update: 2018-08-20
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core: Ethernet Wrapper
 -------------------------------------------------------------------------------
@@ -18,11 +16,14 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.EthMacPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.EthMacPkg.all;
+
+library lsst_pwr_ctrl_core;
 
 entity LsstPwrCtrlEth is
    generic (
@@ -64,6 +65,7 @@ architecture mapping of LsstPwrCtrlEth is
 
    constant SERVER_PORTS_C : PositiveArray(0 downto 0)        := (0 => 8192);  -- UDP Server @ Port = 8192
    constant AXIS_CONFIG_C  : AxiStreamConfigArray(0 downto 0) := (0 => EMAC_AXIS_CONFIG_C);
+   constant PHY_AXIS_CONFIG_C  : AxiStreamConfigArray(NUM_LANE_G-1 downto 0) := (others => EMAC_AXIS_CONFIG_C);
 
    signal obMacMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
    signal obMacSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
@@ -106,8 +108,8 @@ begin
 
       -------------------------
       -- Ethernet Configuration
-      -------------------------   
-      U_Config : entity work.LsstPwrCtrlEthConfig
+      -------------------------
+      U_Config : entity lsst_pwr_ctrl_core.LsstPwrCtrlEthConfig
          generic map (
             TPD_G => TPD_G)
          port map (
@@ -126,7 +128,7 @@ begin
       ------------------------
       -- GigE Core for ARTIX-7
       ------------------------
-      U_PHY_MAC : entity work.GigEthGtp7Wrapper
+      U_PHY_MAC : entity surf.GigEthGtp7Wrapper
          generic map (
             TPD_G              => TPD_G,
             NUM_LANE_G         => NUM_LANE_G,
@@ -137,7 +139,7 @@ begin
             CLKFBOUT_MULT_F_G  => 8.0,  -- 1 GHz = (8 x 125 MHz)
             CLKOUT0_DIVIDE_F_G => 8.0,  -- 125 MHz = (1.0 GHz/8)
             -- AXI Streaming Configurations
-            AXIS_CONFIG_G      => (others => EMAC_AXIS_CONFIG_C))
+            AXIS_CONFIG_G      => PHY_AXIS_CONFIG_C)
          port map (
             -- Local Configurations
             localMac     => localMac,
@@ -150,8 +152,8 @@ begin
             dmaObSlaves  => ibMacSlaves,
             -- Misc. Signals
             extRst       => extRst,
-            phyClk       => ethClk,
-            phyRst       => ethRst,
+            ethClk125    => ethClk,
+            ethRst125    => ethRst,
             phyReady     => ethLinkUp,
             -- MGT Ports
             gtClkP       => ethClkP,
@@ -174,7 +176,7 @@ begin
          ----------------------
          -- IPv4/ARP/UDP Engine
          ----------------------
-         U_UDP : entity work.UdpEngineWrapper
+         U_UDP : entity surf.UdpEngineWrapper
             generic map (
                -- Simulation Generics
                TPD_G          => TPD_G,
@@ -211,7 +213,7 @@ begin
             -- Wrapper for RSSI + AXIS Packetizer
             -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD
             ---------------------------------------------------------------
-            U_RssiServer : entity work.RssiCoreWrapper
+            U_RssiServer : entity surf.RssiCoreWrapper
                generic map (
                   TPD_G               => TPD_G,
                   APP_ILEAVE_EN_G     => APP_ILEAVE_EN_C,
@@ -269,7 +271,7 @@ begin
          ethClk <= ethClkP;
 
 
-         U_PwrUpRst : entity work.PwrUpRst
+         U_PwrUpRst : entity surf.PwrUpRst
             generic map (
                TPD_G         => TPD_G,
                SIM_SPEEDUP_G => true)
@@ -277,7 +279,7 @@ begin
                clk    => ethClk,
                rstOut => ethRst);
 
-         U_RogueStreamSimWrap_1 : entity work.RogueStreamSimWrap
+         U_RogueStreamSimWrap_1 : entity surf.RogueStreamSimWrap
             generic map (
                TPD_G               => TPD_G,
                DEST_ID_G           => 0,
@@ -302,7 +304,7 @@ begin
       -- SLAC Register Protocol Version 3, AXI-Lite Interface
       -- Documentation: https://confluence.slac.stanford.edu/x/cRmVD
       ---------------------------------------------------------------
-      U_SRPv3 : entity work.SrpV3AxiLite
+      U_SRPv3 : entity surf.SrpV3AxiLite
          generic map (
             TPD_G               => TPD_G,
             SLAVE_READY_EN_G    => true,

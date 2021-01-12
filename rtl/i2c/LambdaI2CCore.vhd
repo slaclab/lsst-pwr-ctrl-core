@@ -43,12 +43,10 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_ARITH.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 
-
-use work.StdRtlPkg.all;
-use work.I2cPkg.all;
-use work.LsstI2cPkg.all;
-
-library work;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.I2cPkg.all;
+use surf.LsstI2cPkg.all;
 
 entity LambdaI2CCore is
    generic (
@@ -91,7 +89,7 @@ architecture Behavioral of LambdaI2CCore is
    constant ADDR_SIZE_C : slv(1 downto 0) := toSlv(wordCount(ADDR_WIDTH_G, 8) - 1, 2);
 --  constant DATA_SIZE_C : slv(1 downto 0) := toSlv(wordCount(32, 8) - 1, 2);
    constant I2C_ADDR_C  : slv(9 downto 0) := ("000" & I2C_ADDR_G);
-   constant TIMEOUT_C   : natural         := (getTimeRatio(AXI_CLK_FREQ_G, 200.0)) - 1;  -- 5 ms timeout   
+   constant TIMEOUT_C   : natural         := (getTimeRatio(AXI_CLK_FREQ_G, 200.0)) - 1;  -- 5 ms timeout
 
    constant MY_I2C_BYTE_MASTER_IN_INIT_C : I2cByteMasterInType := (
       i2cAddr     => I2C_ADDR_C,
@@ -274,7 +272,7 @@ begin
       end if;
    end process seq;
 
-   U_I2cByteMaster : entity work.I2cByteMaster
+   U_I2cByteMaster : entity surf.I2cByteMaster
       generic map(
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => 0,
@@ -294,10 +292,10 @@ begin
 
          );
 
-   u_Ram : entity work.SimpleDualPortRam
+   u_Ram : entity surf.SimpleDualPortRam
       generic map (
          TPD_G          => 1 ns,        -- Simulated propagation delay 1 ns;
-         RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low      
+         RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low
          BRAM_EN_G      => false,
          DOB_REG_G      => false,       -- Extra reg on doutb (folded into BRAM)
          ALTERA_SYN_G   => false,
@@ -309,7 +307,7 @@ begin
          INIT_G         => "0"
          )
       port map (
-         -- Port A     
+         -- Port A
          clka    => Clock,
          ena     => '1',
          wea     => r.StoreWrd,
@@ -324,7 +322,7 @@ begin
          doutb   => DpDout
          );
 
-   u_Fifo : entity work.Fifo
+   u_Fifo : entity surf.Fifo
       generic map (
          TPD_G           => 1 ns,
          RST_POLARITY_G  => '1',        -- '1' for active high rst, '0' for active low
@@ -336,7 +334,7 @@ begin
          ALTERA_SYN_G    => false,
          ALTERA_RAM_G    => "M9K",
          USE_BUILT_IN_G  => false,  --if set to true, this module is only xilinx compatible only!!!
-         XIL_DEVICE_G    => "7SERIES",  --xilinx only generic parameter    
+         XIL_DEVICE_G    => "7SERIES",  --xilinx only generic parameter
          SYNC_STAGES_G   => 3,
          PIPE_STAGES_G   => 0,
          DATA_WIDTH_G    => 32,

@@ -20,9 +20,9 @@
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
-library work;
-use work.I2cPkg.all;
-use work.StdRtlPkg.all;
+library surf;
+use surf.I2cPkg.all;
+use surf.StdRtlPkg.all;
 
 package LsstI2cPkg is
 

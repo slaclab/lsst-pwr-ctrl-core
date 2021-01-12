@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
--- Title      : 
+-- Title      :
 -------------------------------------------------------------------------------
 -- Company    : SLAC National Accelerator Laboratory
--- Platform   : 
+-- Platform   :
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: 
+-- Description:
 -------------------------------------------------------------------------------
 -- This file is part of . It is subject to
 -- the license terms in the LICENSE.txt file found in the top-level directory
@@ -19,16 +19,17 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.I2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
 
 entity Ltc2945I2cMap is
    generic (
       TPD_G           : time := 1 ns;
       AXI_CLK_FREQ_G  : real := 156.25E+6;  -- units of Hz
       I2C_SCL_FREQ_G  : real := 100.0E+3;   -- units of Hz
-      I2C_MIN_PULSE_G : real := 100.0E-9);  -- units of seconds; 
+      I2C_MIN_PULSE_G : real := 100.0E-9);  -- units of seconds;
    port (
       -- Clocks and Resets
       axiClk         : in    sl;
@@ -67,30 +68,30 @@ architecture rtl of Ltc2945I2cMap is
       6  => (axilAddr => X"000000_18", regAddr => X"000000_08", dataSize => 3),  -- Max Power
       7  => (axilAddr => X"000000_1C", regAddr => X"000000_0B", dataSize => 3),  -- Min Power
       8  => (axilAddr => X"000000_20", regAddr => X"000000_0E", dataSize => 3),  -- Max Power Thresh
-      9  => (axilAddr => X"000000_24", regAddr => X"000000_11", dataSize => 3),  -- Min Power Thresh      
+      9  => (axilAddr => X"000000_24", regAddr => X"000000_11", dataSize => 3),  -- Min Power Thresh
                                                                                  --
       10 => (axilAddr => X"000000_28", regAddr => X"000000_14", dataSize => 2),  -- Sense
       11 => (axilAddr => X"000000_2C", regAddr => X"000000_16", dataSize => 2),  -- Max Sense
       12 => (axilAddr => X"000000_30", regAddr => X"000000_18", dataSize => 2),  -- Min Sense
       13 => (axilAddr => X"000000_34", regAddr => X"000000_1A", dataSize => 2),  -- Max Sense Thresh
-      14 => (axilAddr => X"000000_38", regAddr => X"000000_1C", dataSize => 2),  -- Min Sense Thresh      
+      14 => (axilAddr => X"000000_38", regAddr => X"000000_1C", dataSize => 2),  -- Min Sense Thresh
 
       15 => (axilAddr => X"000000_3C", regAddr => X"000000_1E", dataSize => 2),  -- Vin
       16 => (axilAddr => X"000000_40", regAddr => X"000000_20", dataSize => 2),  -- Max Vin
       17 => (axilAddr => X"000000_44", regAddr => X"000000_22", dataSize => 2),  -- Min Vin
       18 => (axilAddr => X"000000_48", regAddr => X"000000_24", dataSize => 2),  -- Max Vin Thresh
-      19 => (axilAddr => X"000000_4C", regAddr => X"000000_26", dataSize => 2),  -- Min Vin Thresh      
+      19 => (axilAddr => X"000000_4C", regAddr => X"000000_26", dataSize => 2),  -- Min Vin Thresh
 
       20 => (axilAddr => X"000000_50", regAddr => X"000000_28", dataSize => 2),  -- ADin
       21 => (axilAddr => X"000000_54", regAddr => X"000000_2A", dataSize => 2),  -- Max ADin
       22 => (axilAddr => X"000000_58", regAddr => X"000000_2C", dataSize => 2),  -- Min ADin
       23 => (axilAddr => X"000000_5C", regAddr => X"000000_2E", dataSize => 2),  -- Max ADin Thresh
-      24 => (axilAddr => X"000000_60", regAddr => X"000000_30", dataSize => 2)  -- Min ADin Thresh      
+      24 => (axilAddr => X"000000_60", regAddr => X"000000_30", dataSize => 2)  -- Min ADin Thresh
       );
 
 begin
 
-   U_AxiI2cRegMasterMap_1 : entity work.AxiI2cRegMasterMap
+   U_AxiI2cRegMasterMap_1 : entity surf.AxiI2cRegMasterMap
       generic map (
          TPD_G            => TPD_G,
          DEVICE_CFG_G     => DEVICE_CFG_C,
