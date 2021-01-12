@@ -46,7 +46,9 @@ use IEEE.STD_LOGIC_UNSIGNED.all;
 library surf;
 use surf.StdRtlPkg.all;
 use surf.I2cPkg.all;
-use surf.LsstI2cPkg.all;
+
+library lsst_pwr_ctrl_core;
+use lsst_pwr_ctrl_core.LsstI2cPkg.all;
 
 entity LambdaI2CCore is
    generic (
@@ -272,7 +274,7 @@ begin
       end if;
    end process seq;
 
-   U_I2cByteMaster : entity surf.I2cByteMaster
+   U_I2cByteMaster : entity lsst_pwr_ctrl_core.I2cByteMaster
       generic map(
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => 0,
@@ -296,10 +298,8 @@ begin
       generic map (
          TPD_G          => 1 ns,        -- Simulated propagation delay 1 ns;
          RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low
-         BRAM_EN_G      => false,
+         MEMORY_TYPE_G  => "distributed",
          DOB_REG_G      => false,       -- Extra reg on doutb (folded into BRAM)
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M9K",
          BYTE_WR_EN_G   => false,
          DATA_WIDTH_G   => 32,
          BYTE_WIDTH_G   => 8,           -- If BRAM, should be multiple or 8 or 9
@@ -328,13 +328,8 @@ begin
          RST_POLARITY_G  => '1',        -- '1' for active high rst, '0' for active low
          RST_ASYNC_G     => false,
          GEN_SYNC_FIFO_G => true,
-         BRAM_EN_G       => true,
+         MEMORY_TYPE_G   => "block",
          FWFT_EN_G       => false,
-         USE_DSP48_G     => "no",
-         ALTERA_SYN_G    => false,
-         ALTERA_RAM_G    => "M9K",
-         USE_BUILT_IN_G  => false,  --if set to true, this module is only xilinx compatible only!!!
-         XIL_DEVICE_G    => "7SERIES",  --xilinx only generic parameter
          SYNC_STAGES_G   => 3,
          PIPE_STAGES_G   => 0,
          DATA_WIDTH_G    => 32,

@@ -36,7 +36,9 @@ use ieee.numeric_std.all;
 library surf;
 use surf.StdRtlPkg.all;
 use surf.I2cPkg.all;
-use surf.LsstI2cPkg.all;
+
+library lsst_pwr_ctrl_core;
+use lsst_pwr_ctrl_core.LsstI2cPkg.all;
 
 entity I2CByteMaster is
 
