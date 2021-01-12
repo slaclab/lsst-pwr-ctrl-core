@@ -16,7 +16,8 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 package LsstPwrCtrlPkg is
 
@@ -31,6 +32,7 @@ package LsstPwrCtrlPkg is
    -- 04/03/2018 (0x01010100): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.1.1
    -- 04/04/2018 (0x01020000): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.2.0
    -- 04/04/2018 (0x01020100): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v1.2.1
-   constant LSST_PWR_CORE_VERSION_C : slv(31 downto 0) := x"01_02_01_00";
+   -- 01/12/2021 (0x02000000): https://github.com/slaclab/lsst-pwr-ctrl-core/releases/tag/v2.0.0
+   constant LSST_PWR_CORE_VERSION_C : slv(31 downto 0) := x"02_00_00_00";
 
 end package LsstPwrCtrlPkg;

@@ -1,8 +1,6 @@
 -------------------------------------------------------------------------------
 -- File       : LsstPwrCtrlEthConfig.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-05-01
--- Last update: 2018-08-17
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core: Ethernet Configurations
 -------------------------------------------------------------------------------
@@ -20,7 +18,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;

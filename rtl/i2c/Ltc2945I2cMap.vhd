@@ -19,9 +19,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.I2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
 
 entity Ltc2945I2cMap is
    generic (
@@ -90,7 +91,7 @@ architecture rtl of Ltc2945I2cMap is
 
 begin
 
-   U_AxiI2cRegMasterMap_1 : entity work.AxiI2cRegMasterMap
+   U_AxiI2cRegMasterMap_1 : entity surf.AxiI2cRegMasterMap
       generic map (
          TPD_G            => TPD_G,
          DEVICE_CFG_G     => DEVICE_CFG_C,

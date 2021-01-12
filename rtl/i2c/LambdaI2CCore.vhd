@@ -43,12 +43,10 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_ARITH.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 
-
-use work.StdRtlPkg.all;
-use work.I2cPkg.all;
-use work.LsstI2cPkg.all;
-
-library work;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.I2cPkg.all;
+use surf.LsstI2cPkg.all;
 
 entity LambdaI2CCore is
    generic (
@@ -274,7 +272,7 @@ begin
       end if;
    end process seq;
 
-   U_I2cByteMaster : entity work.I2cByteMaster
+   U_I2cByteMaster : entity surf.I2cByteMaster
       generic map(
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => 0,
@@ -294,7 +292,7 @@ begin
 
          );
 
-   u_Ram : entity work.SimpleDualPortRam
+   u_Ram : entity surf.SimpleDualPortRam
       generic map (
          TPD_G          => 1 ns,        -- Simulated propagation delay 1 ns;
          RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low
@@ -324,7 +322,7 @@ begin
          doutb   => DpDout
          );
 
-   u_Fifo : entity work.Fifo
+   u_Fifo : entity surf.Fifo
       generic map (
          TPD_G           => 1 ns,
          RST_POLARITY_G  => '1',        -- '1' for active high rst, '0' for active low

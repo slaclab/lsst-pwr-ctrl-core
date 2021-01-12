@@ -24,10 +24,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiLitePkg.all;
-use work.I2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.AxiLitePkg.all;
+use surf.I2cPkg.all;
+
+library lsst_pwr_ctrl_core;
 
 entity LTC2945Axil is
    generic (
@@ -140,7 +143,7 @@ begin
       end if;
    end process seq;
 
-   u_LTC2945 : entity work.LTC2945I2CCore
+   u_LTC2945 : entity lsst_pwr_ctrl_core.LTC2945I2CCore
       generic map (
          TPD_G           => 1 ns,
          ADDR_WIDTH_G    => 8,

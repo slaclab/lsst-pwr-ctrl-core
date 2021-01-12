@@ -43,12 +43,14 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.STD_LOGIC_ARITH.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 
+library surf;
+use surf.StdRtlPkg.all;
+use surf.I2cPkg.all;
+
+library lsst_pwr_ctrl_core;
 
 library unisim;
 use unisim.vcomponents.all;
-
-use work.StdRtlPkg.all;
-use work.I2cPkg.all;
 
 entity LTC2945_Tb is
    port (
@@ -94,7 +96,7 @@ begin
          T  => i2co.sdaoen
          );
 
-   u_LTC2945 : entity work.LTC2945i2cCore
+   u_LTC2945 : entity lsst_pwr_ctrl_core.LTC2945i2cCore
       generic map (
          TPD_G           => 1 ns,
          ADDR_WIDTH_G    => 8,

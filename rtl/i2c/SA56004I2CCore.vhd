@@ -55,9 +55,10 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.I2cPkg.all;
-use work.LsstI2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.I2cPkg.all;
+use surf.LsstI2cPkg.all;
 
 entity SA56004I2CCore is
    generic (
@@ -323,7 +324,7 @@ begin
       end if;
    end process seq;
 
-   U_I2cRegMaster : entity work.I2cRegMaster
+   U_I2cRegMaster : entity surf.I2cRegMaster
       generic map(
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => 0,
@@ -342,7 +343,7 @@ begin
          i2co   => i2co
          );
 
-   u_Ram : entity work.SimpleDualPortRam
+   u_Ram : entity surf.SimpleDualPortRam
       generic map (
          TPD_G          => 1 ns,        -- Simulated propagation delay 1 ns;
          RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low
@@ -372,7 +373,7 @@ begin
          doutb   => DpDout
          );
 
-   u_Fifo : entity work.Fifo
+   u_Fifo : entity surf.Fifo
       generic map (
          TPD_G           => 1 ns,
          RST_POLARITY_G  => '1',        -- '1' for active high rst, '0' for active low
