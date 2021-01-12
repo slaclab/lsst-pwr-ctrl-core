@@ -42,9 +42,12 @@ library IEEE;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.I2cPkg.all;
-use work.LsstI2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.I2cPkg.all;
+
+library lsst_pwr_ctrl_core;
+use lsst_pwr_ctrl_core.LsstI2cPkg.all;
 
 entity LTC2945I2CCore is
    generic (
@@ -87,7 +90,7 @@ architecture Behavioral of LTC2945I2CCore is
    constant ADDR_SIZE_C : slv(1 downto 0) := toSlv(wordCount(ADDR_WIDTH_G, 8) - 1, 2);
 --  constant DATA_SIZE_C : slv(1 downto 0) := toSlv(wordCount(32, 8) - 1, 2);
    constant I2C_ADDR_C  : slv(9 downto 0) := ("000" & I2C_ADDR_G);
-   constant TIMEOUT_C   : natural         := (getTimeRatio(AXI_CLK_FREQ_G, 200.0)) - 1;  -- 5 ms timeout   
+   constant TIMEOUT_C   : natural         := (getTimeRatio(AXI_CLK_FREQ_G, 200.0)) - 1;  -- 5 ms timeout
 
    constant MY_I2C_REG_MASTER_IN_INIT_C : I2cRegMasterInType := (
       i2cAddr     => I2C_ADDR_C,
@@ -204,7 +207,7 @@ begin
       v.StoreWrd   := '0';
 
       -- 12 bit data is stored left justified
-      -- 
+      --
       if (r.wrdcnt < 10) then
          v.RamIn := regout.regRdData(31 downto 0);
       else
@@ -329,7 +332,7 @@ begin
       end if;
    end process seq;
 
-   U_I2cRegMaster : entity work.I2cRegMaster
+   U_I2cRegMaster : entity surf.I2cRegMaster
       generic map(
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => 0,
@@ -348,14 +351,12 @@ begin
          i2co   => i2co
          );
 
-   u_Ram : entity work.SimpleDualPortRam
+   u_Ram : entity surf.SimpleDualPortRam
       generic map (
          TPD_G          => 1 ns,        -- Simulated propagation delay 1 ns;
-         RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low      
-         BRAM_EN_G      => false,
+         RST_POLARITY_G => '1',         -- '1' for active high rst, '0' for active low
+         MEMORY_TYPE_G  => "distributed",
          DOB_REG_G      => false,       -- Extra reg on doutb (folded into BRAM)
-         ALTERA_SYN_G   => false,
-         ALTERA_RAM_G   => "M9K",
          BYTE_WR_EN_G   => false,
          DATA_WIDTH_G   => 32,
          BYTE_WIDTH_G   => 8,           -- If BRAM, should be multiple or 8 or 9
@@ -363,7 +364,7 @@ begin
          INIT_G         => "0"
          )
       port map (
-         -- Port A     
+         -- Port A
          clka    => Clock,
          ena     => '1',
          wea     => r.StoreWrd,
@@ -378,19 +379,14 @@ begin
          doutb   => DpDout
          );
 
-   u_Fifo : entity work.Fifo
+   u_Fifo : entity surf.Fifo
       generic map (
          TPD_G           => 1 ns,
          RST_POLARITY_G  => '1',        -- '1' for active high rst, '0' for active low
          RST_ASYNC_G     => false,
          GEN_SYNC_FIFO_G => true,
-         BRAM_EN_G       => true,
+         MEMORY_TYPE_G   => "block",
          FWFT_EN_G       => false,
-         USE_DSP48_G     => "no",
-         ALTERA_SYN_G    => false,
-         ALTERA_RAM_G    => "M9K",
-         USE_BUILT_IN_G  => false,  --if set to true, this module is only xilinx compatible only!!!
-         XIL_DEVICE_G    => "7SERIES",  --xilinx only generic parameter    
          SYNC_STAGES_G   => 3,
          PIPE_STAGES_G   => 0,
          DATA_WIDTH_G    => 32,

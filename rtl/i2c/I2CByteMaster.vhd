@@ -21,11 +21,11 @@
 --   FILTER_G = (min_pulse_time / clk_period) + 1
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC Firmware Standard Library'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'SLAC Firmware Standard Library', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -33,9 +33,12 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.I2cPkg.all;
-use work.LsstI2cPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.I2cPkg.all;
+
+library lsst_pwr_ctrl_core;
+use lsst_pwr_ctrl_core.LsstI2cPkg.all;
 
 entity I2CByteMaster is
 
@@ -125,7 +128,7 @@ architecture rtl of I2CByteMaster is
 
 begin
 
-   i2cMaster_1 : entity work.I2cMaster
+   i2cMaster_1 : entity surf.I2cMaster
       generic map (
          TPD_G                => TPD_G,
          OUTPUT_EN_POLARITY_G => OUTPUT_EN_POLARITY_G,
@@ -256,7 +259,7 @@ begin
             v.regOut.regAck  := '1';
             v.regOut.regFail := r.regOut.regFail;
             if (regIn.regReq = '0') then
---          v.regOut.regAck := '0'; Might want this back. 
+--          v.regOut.regAck := '0'; Might want this back.
                v.state := WAIT_REQ_S;
             end if;
 

@@ -1,8 +1,6 @@
 -------------------------------------------------------------------------------
 -- File       : LsstPwrCtrlCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-05-01
--- Last update: 2018-08-20
 -------------------------------------------------------------------------------
 -- Description: LSST's Common Power Controller Core
 -------------------------------------------------------------------------------
@@ -18,10 +16,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.LsstPwrCtrlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+
+library lsst_pwr_ctrl_core;
+use lsst_pwr_ctrl_core.LsstPwrCtrlPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -50,8 +51,8 @@ entity LsstPwrCtrlCore is
       dnaValue         : out slv(127 downto 0);
       -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
       overrideEthCofig : in  sl               := '0';  -- '0' = uses LsstPwrCtrlEthConfig.vhd, '1' = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
-      overrideMacAddr  : in  slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
-      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";        -- 192.168.1.10      
+      overrideMacAddr  : in  slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00
+      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";        -- 192.168.1.10
       -- XADC Ports
       vPIn             : in  sl;
       vNIn             : in  sl;
@@ -115,7 +116,7 @@ begin
    axilWriteMasters(6 downto 0) <= writeMasters(6 downto 0);
    writeSlaves(6 downto 0)      <= axilWriteSlaves(6 downto 0);
 
-   U_Heartbeat : entity work.Heartbeat
+   U_Heartbeat : entity surf.Heartbeat
       generic map(
          TPD_G       => TPD_G,
          PERIOD_IN_G => (1.0/SYS_CLK_FREQ_C))
@@ -126,7 +127,7 @@ begin
    -------------------
    -- Ethernet Wrapper
    -------------------
-   U_Eth : entity work.LsstPwrCtrlEth
+   U_Eth : entity lsst_pwr_ctrl_core.LsstPwrCtrlEth
       generic map (
          TPD_G          => TPD_G,
          SIMULATION_G   => SIMULATION_G,
@@ -160,7 +161,7 @@ begin
    ---------------------------
    -- AXI-Lite Crossbar Module
    ---------------------------
-   U_Xbar : entity work.AxiLiteCrossbar
+   U_Xbar : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => NUM_LANE_G,
@@ -181,7 +182,7 @@ begin
    ---------------------------
    -- AXI-Lite: Version Module
    ---------------------------
-   U_Version : entity work.AxiVersion
+   U_Version : entity surf.AxiVersion
       generic map (
          TPD_G              => TPD_G,
          BUILD_INFO_G       => BUILD_INFO_G,
@@ -193,7 +194,7 @@ begin
          USE_SLOWCLK_G      => false,
          BUFR_CLK_DIV_G     => 8,
          AUTO_RELOAD_EN_G   => false,
-         AUTO_RELOAD_TIME_G => 10.0,
+         AUTO_RELOAD_TIME_G => 10,
          AUTO_RELOAD_ADDR_G => (others => '0'))
       port map (
          axiReadMaster  => readMasters(VERSION_INDEX_C),
@@ -208,7 +209,7 @@ begin
    -----------------------
    -- AXI-Lite XADC Module
    -----------------------
-   U_Xadc : entity work.AxiXadcMinimumCore
+   U_Xadc : entity surf.AxiXadcMinimumCore
       port map (
          -- XADC Ports
          vPIn           => vPIn,
@@ -225,7 +226,7 @@ begin
    ----------------------
    -- AXI-Lite: Boot Prom
    ----------------------
-   U_SpiProm : entity work.AxiMicronN25QCore
+   U_SpiProm : entity surf.AxiMicronN25QCore
       generic map (
          TPD_G              => TPD_G,
          EN_PASSWORD_LOCK_G => true,
@@ -268,6 +269,6 @@ begin
          USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
          USRCCLKTS => '0',              -- 1-bit input: User CCLK 3-state enable input
          USRDONEO  => '1',              -- 1-bit input: User DONE pin output control
-         USRDONETS => '1');             -- 1-bit input: User DONE 3-state enable output   
+         USRDONETS => '1');             -- 1-bit input: User DONE 3-state enable output
 
 end mapping;
