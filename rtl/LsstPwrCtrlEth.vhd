@@ -106,7 +106,7 @@ begin
 
       -------------------------
       -- Ethernet Configuration
-      -------------------------   
+      -------------------------
       U_Config : entity work.LsstPwrCtrlEthConfig
          generic map (
             TPD_G => TPD_G)

@@ -2,7 +2,7 @@
 --                                                             --
 -----------------------------------------------------------------
 --
---      LambdaAxil.vhd - 
+--      LambdaAxil.vhd -
 --
 --      Copyright(c) SLAC National Accelerator Laboratory 2000
 --
@@ -123,7 +123,7 @@ begin
       -- Register the variable for next clock cycle
       rin <= v;
 
-      -- Outputs 
+      -- Outputs
       axilReadSlave  <= r.axilReadSlave;
       axilWriteSlave <= r.axilWriteSlave;
 

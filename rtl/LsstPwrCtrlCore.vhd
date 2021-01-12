@@ -50,8 +50,8 @@ entity LsstPwrCtrlCore is
       dnaValue         : out slv(127 downto 0);
       -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
       overrideEthCofig : in  sl               := '0';  -- '0' = uses LsstPwrCtrlEthConfig.vhd, '1' = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
-      overrideMacAddr  : in  slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00      
-      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";        -- 192.168.1.10      
+      overrideMacAddr  : in  slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00
+      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";        -- 192.168.1.10
       -- XADC Ports
       vPIn             : in  sl;
       vNIn             : in  sl;
@@ -268,6 +268,6 @@ begin
          USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
          USRCCLKTS => '0',              -- 1-bit input: User CCLK 3-state enable input
          USRDONEO  => '1',              -- 1-bit input: User DONE pin output control
-         USRDONETS => '1');             -- 1-bit input: User DONE 3-state enable output   
+         USRDONETS => '1');             -- 1-bit input: User DONE 3-state enable output
 
 end mapping;

@@ -84,7 +84,7 @@ begin
          IO => scl,                     -- buffer inout port (connect directly to top-level port)
          I  => i2co.scl,                -- Buffer input
          T  => i2co.scloen
-         );                             -- 3-state enable input, high=input, low=output  
+         );                             -- 3-state enable input, high=input, low=output
 
    IOBUF_SDA : IOBUF                    -- output buffer to ltc
       port map (                        -- Buffer output
