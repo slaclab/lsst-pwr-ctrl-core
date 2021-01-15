@@ -368,6 +368,7 @@ begin
             TPD_G               => TPD_G,
             SLAVE_READY_EN_G    => true,
             GEN_SYNC_FIFO_G     => true,
+            AXIL_CLK_FREQ_G     => SYS_CLK_FREQ_G,
             AXI_STREAM_CONFIG_G => EMAC_AXIS_CONFIG_C)
          port map (
             -- Streaming Slave (Rx) Interface (sAxisClk domain)
