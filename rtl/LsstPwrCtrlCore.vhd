@@ -98,6 +98,16 @@ architecture mapping of LsstPwrCtrlCore is
 
    signal userValues : Slv32Array(0 to 63);
 
+   attribute dont_touch                     : string;
+   attribute dont_touch of writeMasters     : signal is "TRUE";
+   attribute dont_touch of writeSlaves      : signal is "TRUE";
+   attribute dont_touch of readMasters      : signal is "TRUE";
+   attribute dont_touch of readSlaves       : signal is "TRUE";
+   attribute dont_touch of coreWriteMasters : signal is "TRUE";
+   attribute dont_touch of coreWriteSlaves  : signal is "TRUE";
+   attribute dont_touch of coreReadMasters  : signal is "TRUE";
+   attribute dont_touch of coreReadSlaves   : signal is "TRUE";
+
 begin
 
    userValues(0)       <= LSST_PWR_CORE_VERSION_C;
