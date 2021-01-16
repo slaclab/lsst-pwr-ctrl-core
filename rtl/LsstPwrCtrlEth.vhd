@@ -25,6 +25,9 @@ use surf.EthMacPkg.all;
 
 library lsst_pwr_ctrl_core;
 
+library unisim;
+use unisim.vcomponents.all;
+
 entity LsstPwrCtrlEth is
    generic (
       TPD_G          : time                  := 1 ns;
@@ -63,9 +66,9 @@ architecture mapping of LsstPwrCtrlEth is
    constant RSSI_C          : boolean := false;  -- false = UDP only, true = RUDP
    constant APP_ILEAVE_EN_C : boolean := false;  -- false = RSSI uses AxiStreamPacketizer1, true = RSSI uses AxiStreamPacketizer2
 
-   constant SERVER_PORTS_C : PositiveArray(0 downto 0)        := (0 => 8192);  -- UDP Server @ Port = 8192
-   constant AXIS_CONFIG_C  : AxiStreamConfigArray(0 downto 0) := (0 => EMAC_AXIS_CONFIG_C);
-   constant PHY_AXIS_CONFIG_C  : AxiStreamConfigArray(NUM_LANE_G-1 downto 0) := (others => EMAC_AXIS_CONFIG_C);
+   constant SERVER_PORTS_C    : PositiveArray(0 downto 0)                   := (0      => 8192);  -- UDP Server @ Port = 8192
+   constant AXIS_CONFIG_C     : AxiStreamConfigArray(0 downto 0)            := (0      => EMAC_AXIS_CONFIG_C);
+   constant PHY_AXIS_CONFIG_C : AxiStreamConfigArray(NUM_LANE_G-1 downto 0) := (others => EMAC_AXIS_CONFIG_C);
 
    signal obMacMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
    signal obMacSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
@@ -98,11 +101,18 @@ architecture mapping of LsstPwrCtrlEth is
    signal ethIp  : slv(31 downto 0);
 
 
+   signal gtClk  : sl;
+   signal clkIn  : slv(6 downto 0);
+   signal rstIn  : slv(6 downto 0);
+   signal clkout : slv(5 downto 0);
+   signal rstout : slv(5 downto 0);
+
+
 begin
 
    axilClk <= ethClk;
    axilRst <= ethRst;
-   extRst  <= not(extRstL);
+   extRst  <= not(extRstL) or rstout(5);
 
    ETH_GEN : if (not SIMULATION_G) generate
 
@@ -125,6 +135,56 @@ begin
       ethMac <= efuseMac when(overrideEthCofig = '0') else overrideMacAddr;
       ethIp  <= efuseIp  when(overrideEthCofig = '0') else overrideIpAddr;
 
+      -----------------------------
+      -- Clock Jitter/Glitch Filter
+      -----------------------------
+      U_IBUFDS_GTE2 : IBUFDS_GTE2
+         port map (
+            I     => ethClkP,
+            IB    => ethClkN,
+            CEB   => '0',
+            ODIV2 => open,
+            O     => gtClk);
+
+      U_BUFG : BUFG
+         port map (
+            I => gtClk,
+            O => clkIn(0));
+
+      U_PwrUpRst : entity surf.PwrUpRst
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            clk    => clkIn(0),
+            rstOut => rstIn(0));
+
+      GEN_PLL :
+      for i in 5 downto 0 generate
+
+         U_PLL : entity surf.ClockManager7
+            generic map(
+               TPD_G             => TPD_G,
+               TYPE_G            => "PLL",
+               INPUT_BUFG_G      => false,
+               FB_BUFG_G         => false,
+               RST_IN_POLARITY_G => '1',
+               NUM_CLOCKS_G      => 1,
+               -- MMCM attributes
+               CLKIN_PERIOD_G    => 8.0,  -- 125MHz
+               DIVCLK_DIVIDE_G   => 1,    -- 125 MHz = (125 MHz/1)
+               CLKFBOUT_MULT_G   => 8,    -- 1 GHz = (8 x 125 MHz)
+               CLKOUT0_DIVIDE_G  => 8)    -- 125 MHz = (1.0 GHz/8)
+            port map(
+               clkIn     => clkIn(i),
+               rstIn     => rstIn(i),
+               clkOut(0) => clkOut(i),
+               rstOut(0) => rstOut(i));
+
+         clkIn(i+1) <= clkOut(i);
+         rstIn(i+1) <= rstOut(i);
+
+      end generate GEN_PLL;
+
       ------------------------
       -- GigE Core for ARTIX-7
       ------------------------
@@ -133,11 +193,11 @@ begin
             TPD_G              => TPD_G,
             NUM_LANE_G         => NUM_LANE_G,
             -- Clocking Configurations
-            USE_GTREFCLK_G     => false,
-            CLKIN_PERIOD_G     => 8.0,  -- 125MHz
-            DIVCLK_DIVIDE_G    => 1,    -- 125 MHz = (125 MHz/1)
-            CLKFBOUT_MULT_F_G  => 8.0,  -- 1 GHz = (8 x 125 MHz)
-            CLKOUT0_DIVIDE_F_G => 8.0,  -- 125 MHz = (1.0 GHz/8)
+            USE_GTREFCLK_G     => true,  --  FALSE: gtClkP/N,  TRUE: gtRefClk
+            CLKIN_PERIOD_G     => 8.0,   -- 125MHz
+            DIVCLK_DIVIDE_G    => 1,     -- 125 MHz = (125 MHz/1)
+            CLKFBOUT_MULT_F_G  => 8.0,   -- 1 GHz = (8 x 125 MHz)
+            CLKOUT0_DIVIDE_F_G => 8.0,   -- 125 MHz = (1.0 GHz/8)
             -- AXI Streaming Configurations
             AXIS_CONFIG_G      => PHY_AXIS_CONFIG_C)
          port map (
@@ -156,8 +216,7 @@ begin
             ethRst125    => ethRst,
             phyReady     => ethLinkUp,
             -- MGT Ports
-            gtClkP       => ethClkP,
-            gtClkN       => ethClkN,
+            gtRefClk     => clkout(5),
             gtTxP        => ethTxP,
             gtTxN        => ethTxN,
             gtRxP        => ethRxP,
@@ -309,6 +368,7 @@ begin
             TPD_G               => TPD_G,
             SLAVE_READY_EN_G    => true,
             GEN_SYNC_FIFO_G     => true,
+            AXIL_CLK_FREQ_G     => SYS_CLK_FREQ_G,
             AXI_STREAM_CONFIG_G => EMAC_AXIS_CONFIG_C)
          port map (
             -- Streaming Slave (Rx) Interface (sAxisClk domain)
