@@ -33,19 +33,20 @@ entity LsstPwrCtrlEth is
       TPD_G          : time                  := 1 ns;
       SIMULATION_G   : boolean               := false;
       NUM_LANE_G     : positive range 1 to 4 := 1;
+      NUM_PORT_G     : positive range 1 to 4 := 2;
       SYS_CLK_FREQ_G : real                  := 125.0E+6);
    port (
       -- Register Interface
       axilClk          : out sl;
       axilRst          : out sl;
-      axilReadMasters  : out AxiLiteReadMasterArray(NUM_LANE_G-1 downto 0);
-      axilReadSlaves   : in  AxiLiteReadSlaveArray(NUM_LANE_G-1 downto 0);
-      axilWriteMasters : out AxiLiteWriteMasterArray(NUM_LANE_G-1 downto 0);
-      axilWriteSlaves  : in  AxiLiteWriteSlaveArray(NUM_LANE_G-1 downto 0);
+      axilReadMasters  : out AxiLiteReadMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+      axilReadSlaves   : in  AxiLiteReadSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+      axilWriteMasters : out AxiLiteWriteMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+      axilWriteSlaves  : in  AxiLiteWriteSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
       -- Misc. Signals
       extRstL          : in  sl;
       ethLinkUp        : out slv(NUM_LANE_G-1 downto 0);
-      rssiLinkUp       : out slv(NUM_LANE_G-1 downto 0);
+      rssiLinkUp       : out slv(NUM_LANE_G*NUM_PORT_G-1 downto 0);
       efuse            : out slv(31 downto 0);
       -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
       overrideEthCofig : in  sl;
@@ -66,7 +67,12 @@ architecture mapping of LsstPwrCtrlEth is
    constant RSSI_C          : boolean := false;  -- false = UDP only, true = RUDP
    constant APP_ILEAVE_EN_C : boolean := false;  -- false = RSSI uses AxiStreamPacketizer1, true = RSSI uses AxiStreamPacketizer2
 
-   constant SERVER_PORTS_C    : PositiveArray(0 downto 0)                   := (0      => 8192);  -- UDP Server @ Port = 8192
+   constant SERVER_PORTS_C : PositiveArray(3 downto 0) := (
+      0 => 8192,
+      1 => 8193,
+      2 => 8194,
+      3 => 8195);
+
    constant AXIS_CONFIG_C     : AxiStreamConfigArray(0 downto 0)            := (0      => EMAC_AXIS_CONFIG_C);
    constant PHY_AXIS_CONFIG_C : AxiStreamConfigArray(NUM_LANE_G-1 downto 0) := (others => EMAC_AXIS_CONFIG_C);
 
@@ -75,15 +81,15 @@ architecture mapping of LsstPwrCtrlEth is
    signal ibMacMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
    signal ibMacSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
 
-   signal obServerMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
-   signal obServerSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
-   signal ibServerMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
-   signal ibServerSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
+   signal obServerMasters : AxiStreamMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal obServerSlaves  : AxiStreamSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal ibServerMasters : AxiStreamMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal ibServerSlaves  : AxiStreamSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
 
-   signal appIbMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
-   signal appIbSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
-   signal appObMasters : AxiStreamMasterArray(NUM_LANE_G-1 downto 0);
-   signal appObSlaves  : AxiStreamSlaveArray(NUM_LANE_G-1 downto 0);
+   signal appIbMasters : AxiStreamMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal appIbSlaves  : AxiStreamSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal appObMasters : AxiStreamMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal appObSlaves  : AxiStreamSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
 
    signal localMac : Slv48Array(NUM_LANE_G-1 downto 0);
    signal dmaClk   : slv(NUM_LANE_G-1 downto 0);
@@ -92,7 +98,7 @@ architecture mapping of LsstPwrCtrlEth is
    signal ethClk     : sl;
    signal ethRst     : sl;
    signal extRst     : sl;
-   signal rssiStatus : Slv7Array(3 downto 0) := (others => (others => '0'));
+   signal rssiStatus : Slv7Array(NUM_LANE_G*NUM_PORT_G-1 downto 0) := (others => (others => '0'));
 
    signal efuseMac : slv(47 downto 0);
    signal efuseIp  : slv(31 downto 0);
@@ -230,6 +236,7 @@ begin
    end generate;
 
    GEN_LANE : for i in 0 to NUM_LANE_G-1 generate
+
       ETH_GEN : if (not SIMULATION_G) generate
 
          ----------------------
@@ -241,7 +248,7 @@ begin
                TPD_G          => TPD_G,
                -- UDP Server Generics
                SERVER_EN_G    => true,
-               SERVER_SIZE_G  => 1,
+               SERVER_SIZE_G  => NUM_PORT_G,
                SERVER_PORTS_G => SERVER_PORTS_C,
                -- UDP Client Generics
                CLIENT_EN_G    => false,
@@ -251,143 +258,149 @@ begin
                COMM_TIMEOUT_G => 30)
             port map (
                -- Local Configurations
-               localMac           => ethMac,
-               localIp            => ethIp,
+               localMac        => ethMac,
+               localIp         => ethIp,
                -- Interface to Ethernet Media Access Controller (MAC)
-               obMacMaster        => obMacMasters(i),
-               obMacSlave         => obMacSlaves(i),
-               ibMacMaster        => ibMacMasters(i),
-               ibMacSlave         => ibMacSlaves(i),
+               obMacMaster     => obMacMasters(i),
+               obMacSlave      => obMacSlaves(i),
+               ibMacMaster     => ibMacMasters(i),
+               ibMacSlave      => ibMacSlaves(i),
                -- Interface to UDP Server engine(s)
-               obServerMasters(0) => obServerMasters(i),
-               obServerSlaves(0)  => obServerSlaves(i),
-               ibServerMasters(0) => ibServerMasters(i),
-               ibServerSlaves(0)  => ibServerSlaves(i),
+               obServerMasters => obServerMasters(i*NUM_PORT_G+(NUM_PORT_G-1) downto i*NUM_PORT_G),
+               obServerSlaves  => obServerSlaves(i*NUM_PORT_G+(NUM_PORT_G-1) downto i*NUM_PORT_G),
+               ibServerMasters => ibServerMasters(i*NUM_PORT_G+(NUM_PORT_G-1) downto i*NUM_PORT_G),
+               ibServerSlaves  => ibServerSlaves(i*NUM_PORT_G+(NUM_PORT_G-1) downto i*NUM_PORT_G),
                -- Clock and Reset
-               clk                => ethClk,
-               rst                => ethRst);
+               clk             => ethClk,
+               rst             => ethRst);
 
-         GEN_RSSI : if (RSSI_C = true) generate
-            ---------------------------------------------------------------
-            -- Wrapper for RSSI + AXIS Packetizer
-            -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD
-            ---------------------------------------------------------------
-            U_RssiServer : entity surf.RssiCoreWrapper
+
+         GEN_PORTS : for j in 0 to NUM_PORT_G-1 generate
+
+            GEN_RSSI : if (RSSI_C = true) generate
+               ---------------------------------------------------------------
+               -- Wrapper for RSSI + AXIS Packetizer
+               -- Documentation: https://confluence.slac.stanford.edu/x/1IyfD
+               ---------------------------------------------------------------
+               U_RssiServer : entity surf.RssiCoreWrapper
+                  generic map (
+                     TPD_G               => TPD_G,
+                     APP_ILEAVE_EN_G     => APP_ILEAVE_EN_C,
+                     MAX_SEG_SIZE_G      => 1024,
+                     SEGMENT_ADDR_SIZE_G => 7,
+                     APP_STREAMS_G       => 1,
+                     APP_STREAM_ROUTES_G => (0 => "--------"),
+                     CLK_FREQUENCY_G     => SYS_CLK_FREQ_G,
+                     TIMEOUT_UNIT_G      => 1.0E-3,  -- In units of seconds
+                     SERVER_G            => true,
+                     RETRANSMIT_ENABLE_G => true,
+                     BYPASS_CHUNKER_G    => false,
+                     WINDOW_ADDR_SIZE_G  => 3,
+                     PIPE_STAGES_G       => 1,
+                     APP_AXIS_CONFIG_G   => AXIS_CONFIG_C,
+                     TSP_AXIS_CONFIG_G   => EMAC_AXIS_CONFIG_C,
+                     INIT_SEQ_N_G        => 16#80#)
+                  port map (
+                     clk_i                => ethClk,
+                     rst_i                => ethRst,
+                     openRq_i             => '1',
+                     -- Transport Layer Interface
+                     sTspAxisMaster_i     => obServerMasters(i*NUM_PORT_G+j),
+                     sTspAxisSlave_o      => obServerSlaves(i*NUM_PORT_G+j),
+                     mTspAxisMaster_o     => ibServerMasters(i*NUM_PORT_G+j),
+                     mTspAxisSlave_i      => ibServerSlaves(i*NUM_PORT_G+j),
+                     -- Application Layer Interface
+                     sAppAxisMasters_i(0) => appIbMasters(i*NUM_PORT_G+j),
+                     sAppAxisSlaves_o(0)  => appIbSlaves(i*NUM_PORT_G+j),
+                     mAppAxisMasters_o(0) => appObMasters(i*NUM_PORT_G+j),
+                     mAppAxisSlaves_i(0)  => appObSlaves(i*NUM_PORT_G+j),
+                     -- Internal statuses
+                     statusReg_o          => rssiStatus(i*NUM_PORT_G+j));
+
+               rssiLinkUp(i*NUM_PORT_G+j) <= rssiStatus(i*NUM_PORT_G+j)(0);
+
+            end generate;
+
+            BYP_RSSI : if (RSSI_C = false) generate
+
+               ---------------------------
+               -- No UDP reliability Layer
+               ---------------------------
+               appObMasters(i*NUM_PORT_G+j)    <= obServerMasters(i*NUM_PORT_G+j);
+               obServerSlaves(i*NUM_PORT_G+j)  <= appObSlaves(i*NUM_PORT_G+j);
+               ibServerMasters(i*NUM_PORT_G+j) <= appIbMasters(i*NUM_PORT_G+j);
+               appIbSlaves(i*NUM_PORT_G+j)     <= ibServerSlaves(i*NUM_PORT_G+j);
+               rssiLinkUp(i*NUM_PORT_G+j)      <= '0';
+
+            end generate;
+
+         end generate;
+
+         SIMULATION_GEN : if (SIMULATION_G) generate
+
+            ethClk <= ethClkP;
+
+            U_PwrUpRst : entity surf.PwrUpRst
+               generic map (
+                  TPD_G         => TPD_G,
+                  SIM_SPEEDUP_G => true)
+               port map (
+                  clk    => ethClk,
+                  rstOut => ethRst);
+
+            U_RogueStreamSimWrap_1 : entity surf.RogueStreamSimWrap
                generic map (
                   TPD_G               => TPD_G,
-                  APP_ILEAVE_EN_G     => APP_ILEAVE_EN_C,
-                  MAX_SEG_SIZE_G      => 1024,
-                  SEGMENT_ADDR_SIZE_G => 7,
-                  APP_STREAMS_G       => 1,
-                  APP_STREAM_ROUTES_G => (0 => "--------"),
-                  CLK_FREQUENCY_G     => SYS_CLK_FREQ_G,
-                  TIMEOUT_UNIT_G      => 1.0E-3,  -- In units of seconds
-                  SERVER_G            => true,
-                  RETRANSMIT_ENABLE_G => true,
-                  BYPASS_CHUNKER_G    => false,
-                  WINDOW_ADDR_SIZE_G  => 3,
-                  PIPE_STAGES_G       => 1,
-                  APP_AXIS_CONFIG_G   => AXIS_CONFIG_C,
-                  TSP_AXIS_CONFIG_G   => EMAC_AXIS_CONFIG_C,
-                  INIT_SEQ_N_G        => 16#80#)
+                  DEST_ID_G           => 0,
+                  USER_ID_G           => i*NUM_PORT_G+j,
+                  COMMON_MASTER_CLK_G => true,
+                  COMMON_SLAVE_CLK_G  => true,
+                  AXIS_CONFIG_G       => EMAC_AXIS_CONFIG_C)
                port map (
-                  clk_i                => ethClk,
-                  rst_i                => ethRst,
-                  openRq_i             => '1',
-                  -- Transport Layer Interface
-                  sTspAxisMaster_i     => obServerMasters(i),
-                  sTspAxisSlave_o      => obServerSlaves(i),
-                  mTspAxisMaster_o     => ibServerMasters(i),
-                  mTspAxisSlave_i      => ibServerSlaves(i),
-                  -- Application Layer Interface
-                  sAppAxisMasters_i(0) => appIbMasters(i),
-                  sAppAxisSlaves_o(0)  => appIbSlaves(i),
-                  mAppAxisMasters_o(0) => appObMasters(i),
-                  mAppAxisSlaves_i(0)  => appObSlaves(i),
-                  -- Internal statuses
-                  statusReg_o          => rssiStatus(i));
+                  clk         => ethClk,
+                  rst         => ethRst,
+                  sAxisClk    => ethClk,
+                  sAxisRst    => ethRst,
+                  sAxisMaster => appIbMasters(i*NUM_PORT_G+j),
+                  sAxisSlave  => appIbSlaves(i*NUM_PORT_G+j),
+                  mAxisClk    => ethClk,
+                  mAxisRst    => ethRst,
+                  mAxisMaster => appObMasters(i*NUM_PORT_G+j),
+                  mAxisSlave  => appObSlaves(i*NUM_PORT_G+j));
 
-            rssiLinkUp(i) <= rssiStatus(i)(0);
+         end generate SIMULATION_GEN;
 
-         end generate;
-
-         BYP_RSSI : if (RSSI_C = false) generate
-
-            ---------------------------
-            -- No UDP reliability Layer
-            ---------------------------
-            appObMasters(i)    <= obServerMasters(i);
-            obServerSlaves(i)  <= appObSlaves(i);
-            ibServerMasters(i) <= appIbMasters(i);
-            appIbSlaves(i)     <= ibServerSlaves(i);
-            rssiLinkUp(i)      <= '0';
-
-         end generate;
-
-      end generate;
-
-      SIMULATION_GEN : if (SIMULATION_G) generate
-         ethClk <= ethClkP;
-
-
-         U_PwrUpRst : entity surf.PwrUpRst
-            generic map (
-               TPD_G         => TPD_G,
-               SIM_SPEEDUP_G => true)
-            port map (
-               clk    => ethClk,
-               rstOut => ethRst);
-
-         U_RogueStreamSimWrap_1 : entity surf.RogueStreamSimWrap
+         ---------------------------------------------------------------
+         -- SLAC Register Protocol Version 3, AXI-Lite Interface
+         -- Documentation: https://confluence.slac.stanford.edu/x/cRmVD
+         ---------------------------------------------------------------
+         U_SRPv3 : entity surf.SrpV3AxiLite
             generic map (
                TPD_G               => TPD_G,
-               DEST_ID_G           => 0,
-               USER_ID_G           => i,
-               COMMON_MASTER_CLK_G => true,
-               COMMON_SLAVE_CLK_G  => true,
-               AXIS_CONFIG_G       => EMAC_AXIS_CONFIG_C)
+               SLAVE_READY_EN_G    => true,
+               GEN_SYNC_FIFO_G     => true,
+               AXIL_CLK_FREQ_G     => SYS_CLK_FREQ_G,
+               AXI_STREAM_CONFIG_G => EMAC_AXIS_CONFIG_C)
             port map (
-               clk         => ethClk,           -- [in]
-               rst         => ethRst,           -- [in]
-               sAxisClk    => ethClk,           -- [in]
-               sAxisRst    => ethRst,           -- [in]
-               sAxisMaster => appIbMasters(i),  -- [in]
-               sAxisSlave  => appIbSlaves(i),   -- [out]
-               mAxisClk    => ethClk,           -- [in]
-               mAxisRst    => ethRst,           -- [in]
-               mAxisMaster => appObMasters(i),  -- [out]
-               mAxisSlave  => appObSlaves(i));  -- [in]
-      end generate SIMULATION_GEN;
+               -- Streaming Slave (Rx) Interface (sAxisClk domain)
+               sAxisClk         => ethClk,
+               sAxisRst         => ethRst,
+               sAxisMaster      => appObMasters(i*NUM_PORT_G+j),
+               sAxisSlave       => appObSlaves(i*NUM_PORT_G+j),
+               -- Streaming Master (Tx) Data Interface (mAxisClk domain)
+               mAxisClk         => ethClk,
+               mAxisRst         => ethRst,
+               mAxisMaster      => appIbMasters(i*NUM_PORT_G+j),
+               mAxisSlave       => appIbSlaves(i*NUM_PORT_G+j),
+               -- Master AXI-Lite Interface (axilClk domain)
+               axilClk          => ethClk,
+               axilRst          => ethRst,
+               mAxilReadMaster  => axilReadMasters(i*NUM_PORT_G+j),
+               mAxilReadSlave   => axilReadSlaves(i*NUM_PORT_G+j),
+               mAxilWriteMaster => axilWriteMasters(i*NUM_PORT_G+j),
+               mAxilWriteSlave  => axilWriteSlaves(i*NUM_PORT_G+j));
 
-      ---------------------------------------------------------------
-      -- SLAC Register Protocol Version 3, AXI-Lite Interface
-      -- Documentation: https://confluence.slac.stanford.edu/x/cRmVD
-      ---------------------------------------------------------------
-      U_SRPv3 : entity surf.SrpV3AxiLite
-         generic map (
-            TPD_G               => TPD_G,
-            SLAVE_READY_EN_G    => true,
-            GEN_SYNC_FIFO_G     => true,
-            AXIL_CLK_FREQ_G     => SYS_CLK_FREQ_G,
-            AXI_STREAM_CONFIG_G => EMAC_AXIS_CONFIG_C)
-         port map (
-            -- Streaming Slave (Rx) Interface (sAxisClk domain)
-            sAxisClk         => ethClk,
-            sAxisRst         => ethRst,
-            sAxisMaster      => appObMasters(i),
-            sAxisSlave       => appObSlaves(i),
-            -- Streaming Master (Tx) Data Interface (mAxisClk domain)
-            mAxisClk         => ethClk,
-            mAxisRst         => ethRst,
-            mAxisMaster      => appIbMasters(i),
-            mAxisSlave       => appIbSlaves(i),
-            -- Master AXI-Lite Interface (axilClk domain)
-            axilClk          => ethClk,
-            axilRst          => ethRst,
-            mAxilReadMaster  => axilReadMasters(i),
-            mAxilReadSlave   => axilReadSlaves(i),
-            mAxilWriteMaster => axilWriteMasters(i),
-            mAxilWriteSlave  => axilWriteSlaves(i));
+      end generate GEN_PORT;
 
    end generate GEN_LANE;
 

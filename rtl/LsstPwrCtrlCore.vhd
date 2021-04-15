@@ -33,6 +33,7 @@ entity LsstPwrCtrlCore is
       SIMULATION_G      : boolean                                      := false;
       BUILD_INFO_G      : BuildInfoType;
       NUM_LANE_G        : positive range 1 to 4                        := 1;
+      NUM_PORT_G        : positive range 1 to 4                        := 2;
       AXI_XBAR_CONFIG_G : AxiLiteCrossbarMasterConfigArray(9 downto 0) := genAxiLiteConfig(10, x"0000_0000", 22, 18));
    port (
       -- Register Interface
@@ -45,14 +46,14 @@ entity LsstPwrCtrlCore is
       -- Misc. Signals
       extRstL          : in  sl;
       ethLinkUp        : out slv(NUM_LANE_G-1 downto 0);
-      rssiLinkUp       : out slv(NUM_LANE_G-1 downto 0);
+      rssiLinkUp       : out slv(NUM_LANE_G*NUM_PORT_G-1 downto 0);
       heartBeat        : out sl;
       efuse            : out slv(31 downto 0);
       dnaValue         : out slv(127 downto 0);
       -- Overriding the LsstPwrCtrlEthConfig.vhd MAC/IP addresses Interface
       overrideEthCofig : in  sl               := '0';  -- '0' = uses LsstPwrCtrlEthConfig.vhd, '1' = uses OVERRIDE_MAC_ADDR_G/OVERRIDE_IP_ADDR_G
       overrideMacAddr  : in  slv(47 downto 0) := x"00_00_16_56_00_08";  -- 08:00:56:16:00:00
-      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";        -- 192.168.1.10
+      overrideIpAddr   : in  slv(31 downto 0) := x"0A_01_A8_C0";  -- 192.168.1.10
       -- XADC Ports
       vPIn             : in  sl;
       vNIn             : in  sl;
@@ -86,10 +87,10 @@ architecture mapping of LsstPwrCtrlCore is
    signal readMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal readSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
-   signal coreWriteMasters : AxiLiteWriteMasterArray(NUM_LANE_G-1 downto 0);
-   signal coreWriteSlaves  : AxiLiteWriteSlaveArray(NUM_LANE_G-1 downto 0);
-   signal coreReadMasters  : AxiLiteReadMasterArray(NUM_LANE_G-1 downto 0);
-   signal coreReadSlaves   : AxiLiteReadSlaveArray(NUM_LANE_G-1 downto 0);
+   signal coreWriteMasters : AxiLiteWriteMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal coreWriteSlaves  : AxiLiteWriteSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal coreReadMasters  : AxiLiteReadMasterArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
+   signal coreReadSlaves   : AxiLiteReadSlaveArray(NUM_LANE_G*NUM_PORT_G-1 downto 0);
 
    signal clk        : sl;
    signal rst        : sl;
@@ -114,7 +115,8 @@ begin
    userValues(1)       <= efuseValue;
    userValues(2)       <= toSlv(NUM_LANE_G, 32);
    userValues(3)       <= toSlv(0, 32) when(overrideEthCofig = '0') else toSlv(1, 32);
-   userValues(4 to 63) <= (others => x"00000000");
+   userValues(4)       <= toSlv(NUM_PORT_G, 32);
+   userValues(5 to 63) <= (others => x"00000000");
 
    axilClk <= clk;
    axilRst <= rst;
@@ -142,6 +144,7 @@ begin
          TPD_G          => TPD_G,
          SIMULATION_G   => SIMULATION_G,
          NUM_LANE_G     => NUM_LANE_G,
+         NUM_PORT_G     => NUM_PORT_G,
          SYS_CLK_FREQ_G => SYS_CLK_FREQ_C)
       port map (
          -- Register Interface
@@ -174,7 +177,7 @@ begin
    U_Xbar : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => NUM_LANE_G,
+         NUM_SLAVE_SLOTS_G  => NUM_LANE_G*NUM_PORT_G,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
          MASTERS_CONFIG_G   => AXI_XBAR_CONFIG_G)
       port map (
@@ -267,18 +270,18 @@ begin
    -----------------------------------------------------
    U_STARTUPE2 : STARTUPE2
       port map (
-         CFGCLK    => open,             -- 1-bit output: Configuration main clock output
+         CFGCLK    => open,  -- 1-bit output: Configuration main clock output
          CFGMCLK   => open,  -- 1-bit output: Configuration internal oscillator clock output
          EOS       => open,  -- 1-bit output: Active high output signal indicating the End Of Startup.
-         PREQ      => open,             -- 1-bit output: PROGRAM request to fabric output
-         CLK       => '0',              -- 1-bit input: User start-up clock input
+         PREQ      => open,  -- 1-bit output: PROGRAM request to fabric output
+         CLK       => '0',  -- 1-bit input: User start-up clock input
          GSR       => '0',  -- 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
          GTS       => '0',  -- 1-bit input: Global 3-state input (GTS cannot be used for the port name)
          KEYCLEARB => '0',  -- 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
-         PACK      => '0',              -- 1-bit input: PROGRAM acknowledge input
+         PACK      => '0',  -- 1-bit input: PROGRAM acknowledge input
          USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
-         USRCCLKTS => '0',              -- 1-bit input: User CCLK 3-state enable input
-         USRDONEO  => '1',              -- 1-bit input: User DONE pin output control
-         USRDONETS => '1');             -- 1-bit input: User DONE 3-state enable output
+         USRCCLKTS => '0',  -- 1-bit input: User CCLK 3-state enable input
+         USRDONEO  => '1',  -- 1-bit input: User DONE pin output control
+         USRDONETS => '1');  -- 1-bit input: User DONE 3-state enable output
 
 end mapping;

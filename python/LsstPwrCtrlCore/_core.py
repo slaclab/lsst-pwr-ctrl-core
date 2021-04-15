@@ -81,6 +81,14 @@ class LsstPwrCtrlCore(pr.Device):
             mode         = 'RO',
         ))
 
+        self.add(pr.RemoteVariable(
+            name         = 'NUM_PORT_G',
+            description  = 'Number of UDP port per lanes',
+            offset       = AXIL_OFFSETS[7] + 0x410, # 0x1C0410
+            base         = pr.UInt,
+            mode         = 'RO',
+        ))
+
 
 class LsstPwrCtrlRoot(pr.Root):
     def __init__(self,
