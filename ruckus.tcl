@@ -21,3 +21,6 @@ if { [info exists ::env(OVERRIDE_SUBMODULE_LOCKS)] != 1 || $::env(OVERRIDE_SUBMO
 loadSource -lib lsst_pwr_ctrl_core -dir "$::DIR_PATH/rtl"
 loadSource -lib lsst_pwr_ctrl_core -dir "$::DIR_PATH/rtl/i2c"
 loadConstraints                    -dir "$::DIR_PATH/xdc"
+
+# Updating impl_1 strategy
+set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
