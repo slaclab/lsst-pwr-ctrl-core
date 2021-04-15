@@ -237,6 +237,44 @@ begin
 
    GEN_LANE : for i in 0 to NUM_LANE_G-1 generate
 
+      SIMULATION_GEN : if (SIMULATION_G) generate
+
+         ethClk <= ethClkP;
+
+         U_PwrUpRst : entity surf.PwrUpRst
+            generic map (
+               TPD_G         => TPD_G,
+               SIM_SPEEDUP_G => true)
+            port map (
+               clk    => ethClk,
+               rstOut => ethRst);
+
+         GEN_PORTS_SIM : for j in 0 to NUM_PORT_G-1 generate
+
+            U_RogueStreamSimWrap_1 : entity surf.RogueStreamSimWrap
+               generic map (
+                  TPD_G               => TPD_G,
+                  DEST_ID_G           => 0,
+                  USER_ID_G           => i*NUM_PORT_G+j,
+                  COMMON_MASTER_CLK_G => true,
+                  COMMON_SLAVE_CLK_G  => true,
+                  AXIS_CONFIG_G       => EMAC_AXIS_CONFIG_C)
+               port map (
+                  clk         => ethClk,
+                  rst         => ethRst,
+                  sAxisClk    => ethClk,
+                  sAxisRst    => ethRst,
+                  sAxisMaster => appIbMasters(i*NUM_PORT_G+j),
+                  sAxisSlave  => appIbSlaves(i*NUM_PORT_G+j),
+                  mAxisClk    => ethClk,
+                  mAxisRst    => ethRst,
+                  mAxisMaster => appObMasters(i*NUM_PORT_G+j),
+                  mAxisSlave  => appObSlaves(i*NUM_PORT_G+j));
+
+         end generate;
+
+      end generate SIMULATION_GEN;
+
       ETH_GEN : if (not SIMULATION_G) generate
 
          ----------------------
@@ -336,39 +374,10 @@ begin
 
          end generate;
 
-         SIMULATION_GEN : if (SIMULATION_G) generate
+      end generate ETH_GEN;
 
-            ethClk <= ethClkP;
 
-            U_PwrUpRst : entity surf.PwrUpRst
-               generic map (
-                  TPD_G         => TPD_G,
-                  SIM_SPEEDUP_G => true)
-               port map (
-                  clk    => ethClk,
-                  rstOut => ethRst);
-
-            U_RogueStreamSimWrap_1 : entity surf.RogueStreamSimWrap
-               generic map (
-                  TPD_G               => TPD_G,
-                  DEST_ID_G           => 0,
-                  USER_ID_G           => i*NUM_PORT_G+j,
-                  COMMON_MASTER_CLK_G => true,
-                  COMMON_SLAVE_CLK_G  => true,
-                  AXIS_CONFIG_G       => EMAC_AXIS_CONFIG_C)
-               port map (
-                  clk         => ethClk,
-                  rst         => ethRst,
-                  sAxisClk    => ethClk,
-                  sAxisRst    => ethRst,
-                  sAxisMaster => appIbMasters(i*NUM_PORT_G+j),
-                  sAxisSlave  => appIbSlaves(i*NUM_PORT_G+j),
-                  mAxisClk    => ethClk,
-                  mAxisRst    => ethRst,
-                  mAxisMaster => appObMasters(i*NUM_PORT_G+j),
-                  mAxisSlave  => appObSlaves(i*NUM_PORT_G+j));
-
-         end generate SIMULATION_GEN;
+      GEN_PORTS_SRP : for j in 0 to NUM_PORT_G-1 generate
 
          ---------------------------------------------------------------
          -- SLAC Register Protocol Version 3, AXI-Lite Interface
@@ -400,7 +409,7 @@ begin
                mAxilWriteMaster => axilWriteMasters(i*NUM_PORT_G+j),
                mAxilWriteSlave  => axilWriteSlaves(i*NUM_PORT_G+j));
 
-      end generate GEN_PORT;
+      end generate;
 
    end generate GEN_LANE;
 
