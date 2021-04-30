@@ -33,7 +33,7 @@ entity LsstPwrCtrlCore is
       SIMULATION_G      : boolean                                      := false;
       BUILD_INFO_G      : BuildInfoType;
       NUM_LANE_G        : positive range 1 to 4                        := 1;
-      NUM_PORT_G        : positive range 1 to 4                        := 2;
+      NUM_PORT_G        : positive range 1 to 4                        := 4;
       AXI_XBAR_CONFIG_G : AxiLiteCrossbarMasterConfigArray(9 downto 0) := genAxiLiteConfig(10, x"0000_0000", 22, 18));
    port (
       -- Register Interface
