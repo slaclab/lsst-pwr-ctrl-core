@@ -9,11 +9,9 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
-import rogue
 import argparse
 import time
 import os
-import pyrogue         as pr
 import LsstPwrCtrlCore as board
 
 #################################################################
