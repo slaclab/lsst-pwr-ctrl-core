@@ -81,22 +81,34 @@ class LsstPwrCtrlCore(pr.Device):
             mode         = 'RO',
         ))
 
+        self.add(pr.RemoteVariable(
+            name         = 'NUM_PORT_G',
+            description  = 'Number of UDP port per lanes',
+            offset       = AXIL_OFFSETS[7] + 0x410, # 0x1C0410
+            base         = pr.UInt,
+            mode         = 'RO',
+        ))
+
 
 class LsstPwrCtrlRoot(pr.Root):
     def __init__(self,
-                 hwEmu = False,
-                 sim = False,
-                 rssiEn = False,
-                 ip = '192.168.1.10',
+                 hwEmu    = False,
+                 sim      = False,
+                 rssiEn   = False,
+                 ip       = None,
+                 pollEn   = False,
+                 initRead = True,
                  **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(
+            pollEn   = pollEn,
+            initRead = initRead,
+            **kwargs)
 
         # Check if emulating the GUI interface
         if (hwEmu):
             # Create emulated hardware interface
             print ("Running in Hardware Emulation Mode")
             self.srp = pyrogue.interfaces.simulation.MemEmulate()
-
 
         else:
             # Create srp interface
@@ -118,3 +130,10 @@ class LsstPwrCtrlRoot(pr.Root):
                     udp = rogue.protocols.udp.Client(  ip, 8192, 1500 )
                     # Connect the SRPv3 to UDP
                     pyrogue.streamConnectBiDir(self.srp, udp )
+
+        # Add Core Device
+        self.add(LsstPwrCtrlCore(
+            name    = 'Core',
+            offset  = 0x00000000,
+            memBase = self.srp,
+        ))

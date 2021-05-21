@@ -9,86 +9,87 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
-import pyrogue as pr
-import rogue
-
-import LsstPwrCtrlCore as board
-
 import argparse
 import time
+import os
+import LsstPwrCtrlCore as board
 
-# Set the argument parser
-parser = argparse.ArgumentParser()
+#################################################################
+if __name__ == "__main__":
 
-# Add arguments
-parser.add_argument(
-    "--mcs",
-    type     = str,
-    required = True,
-    help     = "path to mcs file",
-)
+    # Set the argument parser
+    parser = argparse.ArgumentParser()
 
-parser.add_argument(
-    "--ip",
-    type     = str,
-    required = True,
-    help     = "IP address",
-)
+    # Add arguments
+    parser.add_argument(
+        "--mcs",
+        type     = str,
+        required = True,
+        help     = "path to mcs file",
+    )
 
-# Get the arguments
-args = parser.parse_args()
+    parser.add_argument(
+        "--ip",
+        type     = str,
+        required = True,
+        help     = "IP address",
+    )
 
-# Set base
-base = pr.Root(name='base',description='')
+    # Get the arguments
+    args = parser.parse_args()
 
-# Create srp interface
-srp = rogue.protocols.srp.SrpV3()
+    #################################################################
 
-# UDP only
-udp = rogue.protocols.udp.Client( args.ip, 8192, 1500 )
+    # Try to ping the remote device
+    while (os.system("ping -c 1 " + args.ip) != 0):
+        print ( "\nTrying to ping the AMC carrier....\n" )
+        time.sleep(5)
 
-# Connect the SRPv3 to UDP
-pr.streamConnectBiDir( srp, udp )
+    # Set base
+    base = board.LsstPwrCtrlRoot(ip=args.ip)
 
-# Add Base Device
-base.add(board.Core(
-    memBase = srp,
-    offset  = 0x00000000,
-))
+    # Start the system
+    base.start()
 
-# Start the system
-base.start(pollEn=False)
+    # Read all the variables
+    base.ReadAll()
 
-# Create useful pointers
-AxiVersion = base.Core.AxiVersion
-MicronN25Q = base.Core.AxiMicronN25Q
+    # Create useful pointers
+    AxiVersion = base.Core.AxiVersion
+    MicronN25Q = base.Core.AxiMicronN25Q
 
-# Token write to scratchpad to RAW UDP connection
-AxiVersion._rawWrite(0x4,1)
+    #################################################################
 
-# Unlock the AxiMicronN25Q for PROM erase/programming
-MicronN25Q._rawWrite(0x0,0xDEADBEEF)
+    # Token write to scratchpad to RAW UDP connection
+    AxiVersion.ScratchPad.post(0x1)
 
-print ( '###################################################')
-print ( '#                 Old Firmware                    #')
-print ( '###################################################')
-AxiVersion.printStatus()
+    # Unlock the AxiMicronN25Q for PROM erase/programming
+    MicronN25Q.PasswordLock.set(0xDEADBEEF)
 
-# Program the FPGA's PROM
-MicronN25Q.LoadMcsFile(args.mcs)
-
-if(MicronN25Q._progDone):
-    print('\nReloading FPGA firmware from PROM ....')
-    AxiVersion.FpgaReload()
-    time.sleep(10)
-    print('\nReloading FPGA done')
+    #################################################################
 
     print ( '###################################################')
-    print ( '#                 New Firmware                    #')
+    print ( '#                 Old Firmware                    #')
     print ( '###################################################')
     AxiVersion.printStatus()
-else:
-    print('Failed to program FPGA')
 
-base.stop()
-exit()
+    # Program the FPGA's PROM
+    MicronN25Q.LoadMcsFile(args.mcs)
+
+    if(MicronN25Q._progDone):
+        print('\nReloading FPGA firmware from PROM ....')
+        AxiVersion.FpgaReload()
+        time.sleep(10)
+        print('\nReloading FPGA done')
+
+        print ( '###################################################')
+        print ( '#                 New Firmware                    #')
+        print ( '###################################################')
+        AxiVersion.printStatus()
+    else:
+        print('Failed to program FPGA')
+
+    #################################################################
+
+    base.stop()
+    exit()
