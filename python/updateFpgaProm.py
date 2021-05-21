@@ -12,6 +12,7 @@
 import rogue
 import argparse
 import time
+import os
 import pyrogue         as pr
 import LsstPwrCtrlCore as board
 
@@ -41,6 +42,11 @@ if __name__ == "__main__":
 
     #################################################################
 
+    # Try to ping the remote device
+    while (os.system("ping -c 1 " + args.ip) != 0):
+        print ( "\nTrying to ping the AMC carrier....\n" )
+        time.sleep(5)
+
     # Set base
     base = board.LsstPwrCtrlRoot(ip=args.ip)
 
@@ -57,10 +63,10 @@ if __name__ == "__main__":
     #################################################################
 
     # Token write to scratchpad to RAW UDP connection
-    AxiVersion._rawWrite(0x4,1)
+    AxiVersion.ScratchPad.post(0x1)
 
     # Unlock the AxiMicronN25Q for PROM erase/programming
-    MicronN25Q._rawWrite(0x0,0xDEADBEEF)
+    MicronN25Q.PasswordLock.set(0xDEADBEEF)
 
     #################################################################
 
