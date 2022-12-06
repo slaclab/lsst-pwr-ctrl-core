@@ -77,7 +77,7 @@ AxiVersion.printStatus()
 # Program the FPGA's PROM
 MicronN25Q.LoadMcsFile(args.mcs)
 
-if(MicronN25Q._progDone):
+if (MicronN25Q._progDone):
     print('\nReloading FPGA firmware from PROM ....')
     AxiVersion.FpgaReload()
     time.sleep(10)
